@@ -2,10 +2,6 @@
   
 # Electronic Health Record System (Health Record Migration)
 
----
-
->**UNDER CONSTRUCTION!
-Content for ePA 3.0 Health Record Migration coming soon !**
 
 ---
 
@@ -25,7 +21,7 @@ This repository provides technical information for the Electronic Health Record 
 
 Health Record Migration applies when a particular health record shall be moved from one health record system to another ("Relocation"). The process of migration itself involves the ePA-Basic interfaces I_Health_Record_Relocation_Service and I_Information_Service_Accounts.
 
-One step of the relocation is the exchange of encrypted health record content, collected in a single Zip-file - the export package. The structure of the export package and its enryption is defined here.
+One step of the relocation is the exchange of encrypted health record content, collected in a single Zip-file - the export package. The structure of the export package and its enryption is defined here (see /as-wechsel/docs).
 
 This branch relates to  **ePA-Basic, context ePA 3.0 ('ePA für alle')** </br>
 (follow link in [Branchinformation.md](./Branchinformation.md)):

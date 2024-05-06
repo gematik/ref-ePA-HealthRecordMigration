@@ -3,22 +3,7 @@
 
 """
 Das ist die Referenzimplementierung für die Verschlüsselung und Signatur
-beim Export der Akte für den AS-Wechsel bei ePA-3.0.x und ePA-3.1.x.
-
-Ziel ist es den Export-Paket-Mechanismus von ePA-2.6 so weit wie möglich zu
-übernehmen. Da es bei ePA 3.x keine Kontext-Schlüssel mehr gibt, wird für den
-Export der "Null-Schlüssel" (0...0 (256 Bit)) anstatt dessen verwendet. Es
-gibt aus sicherheitstechnischer Perspektive also nur noch eine effektive
-Verschlüsselungsschicht -- aus Implementierungssicht immer noch zwei
-(Null-Schlüssel innere Verschlüsselungsschicht, VAU-ENC bei der äußeren
-Verschlüsselungsschicht).
-
-Für zukünftige ePA-AS-Versionen werden wir mit dem Export-Mechanismus auf eine
-synchrone VAU-zu-VAU-Kommunikation über das VAU-Protokoll wechseln. Die "alte"
-VAU (altes Aktensystem) wird dann die zu exportierten Daten (ZIP-File) über das
-VAU-Protokoll an die "neue" VAU (also im neuen Aktensystem) senden. Das Ziel
-dabei ist, bessere Sicherheitseigenschaften (Forward-Secrecy, Quantum
-Computing Resistance) zu erreichen.
+beim Export der Akte für den AS-Wechsel.
 
 Die alte VAU-Instanz stellt das Export-Paket zunächst als ZIP-File zusammen.
 Und dann wird es mit dem Kontextschlüssel der Akte via AES/GCM verschlüsselt.
@@ -27,7 +12,7 @@ alten VAU signiert. Das Ergebnis wird dann via ECIES-Verschlüsselung für die
 neue VAU verschlüsselt.
 """
 
-import cbor2, datetime, secrets
+import cbor, datetime, secrets
 from binascii import unhexlify
 
 from cryptography import x509
@@ -47,11 +32,10 @@ if __name__ == "__main__":
     # im SOAP-Request ist das Zertifikat base64(der(cert))-kodiert
     neue_vau_enc_zertifikat_der = open("pki/neue_vau_enc_cert.der", "rb").read()
 
-    # Bei ePA-3x. gibt es nun keinen Kontext-Schlüssel mehr. Dieser wird für die
-    # innere Verschlüsselungsschicht jetzt immer auf Null gesetzt.
-    # (Null-Schlüssel 0...0 (256-Bit)
-    user_context_key = unhexlify("00"*32)
-    assert len(user_context_key) == 32 # 256-Bit-Schlüssel
+    # Der Nutzer hat mir bei OpenContext zuvor den Kontext-Schlüssel
+    # der Akte gegeben. Hier im Beispiel ist er:
+    user_context_key = b'0123456789abcdef'*2
+    assert len(user_context_key) == 32
 
     # Der Name der Datei des Export-Paket im Download-Bereich des alten AS
     # soll keine Informationen über den Versicherten enthalten. Er wird
@@ -84,7 +68,7 @@ if __name__ == "__main__":
                 ec.ECDSA(hashes.SHA256()))
 
     # Array aus 6 Elementen: Version=1, Chiffrat_1 ...
-    plaintext_2 = cbor2.dumps([1, ciphertext_1, export_zeit,
+    plaintext_2 = cbor.dumps([1, ciphertext_1, export_zeit,
                    aktueller_versicherter_kvrn, sign_cert, signature])
 
     # Jetzt brauche ich den Schlüssel aus dem Neue-VAU-Zertifikat
@@ -108,6 +92,6 @@ if __name__ == "__main__":
 
     with open(export_paket_name, "wb") as f:
         f.write(ciphertext_2)
-    print("Export-Paket für den Dowloadpunkt (Name, Größe)=(",
+    print("Export-Paket für den Dowloadpunkt (Name, Größe)=(", 
         export_paket_name, ", ", len(ciphertext_2),")", sep='')
 
