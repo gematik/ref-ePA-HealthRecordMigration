@@ -3,7 +3,7 @@
 
 """
 Das ist die Referenzimplementierung für die Verschlüsselung und Signatur
-beim Export der Akte für den AS-Wechsel bei ePA-3.0.x und ePA-3.1.x.
+beim Export der Akte für den AS-Wechsel.
 
 Dies ist der Code für die neue (i. S. v. importierende) VAU-Instanz.
 
@@ -22,8 +22,7 @@ des vom Nutzer übergebenen Kontextschlüssels (AES/GCM).
 
 """
 
-import cbor2, datetime, sys, os, hashlib
-from binascii import unhexlify
+import cbor, datetime, sys, os, hashlib
 
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
@@ -76,9 +75,9 @@ if __name__ == "__main__":
     plaintext_2 = AESGCM(aes_key).decrypt(iv, aes_ciphertext, associated_data=None)
 
     # das würde man sicherlich in einer 'try' Umgebung laufen lassen,
-    # denn bei Fehlkodierung (was in der Praxis sicherlich kaum vorkommt)
+    # denn bei Fehlkodierung (was in der Praxis quasi nicht vorkommt
     # würde es hier eine Exception geben.
-    list_plaintext_2 = cbor2.loads(plaintext_2)
+    list_plaintext_2 = cbor.loads(plaintext_2)
     # Sanity-Checks
     assert len(list_plaintext_2) == 6
     assert list_plaintext_2[0] == 1
@@ -116,9 +115,9 @@ if __name__ == "__main__":
     chiffrat_1 = list_plaintext_2[1]
     assert len(chiffrat_2) > 12+1+16
 
-    # Kontext-Schlüssel gibt es bei ePA-3.x nicht mehr deshalb verwenden wir
-    # anstatt einen Null-Schlüssel (0...0 (256-Bit))
-    user_context_key = unhexlify("00"*32)
+    # Der Nutzer hat mir bei OpenContext zuvor den Kontext-Schlüssel der Akte
+    # gegeben. Hier im Beispiel ist er:
+    user_context_key = b'0123456789abcdef'*2
     assert len(user_context_key) == 32
 
     plaintext_1 = AESGCM(user_context_key).decrypt(chiffrat_1[0:12],

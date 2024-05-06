@@ -1,9 +1,13 @@
+**Version für ePA-2.x**
+
+---
+
 # Schutz des Export-Pakets bei AS-Anbieterwechsel
 
 Wechselt ein Versicherter seinen ePA-Anbieter, werden die Daten seiner Akte vom
 alten Anbieter zum neuen Anbieter übertragen. Hierzu wird im Aktensystem des
 alten Anbieters ein Export-Paket mit den Daten der Akte erstellt, d. h. von den 
-Meta-Daten und Dokumenten (Daten) in einer Akte.
+Meta-Daten und E2E-verschlüsselten Dokumenten.
 Diese Export-Paket wird vom alten Anbieter dem neuen Anbieter zum Download zur
 Verfügung gestellt. Der neue Anbieter kann das Export-Paket laden und die im
 Export-Paket befindlichen Daten in das Konto des Versicherten beim neuen
@@ -15,30 +19,13 @@ gestellt. Das Export-Paket wird daher vor unautorisierten Zugriff (insbesondere
 auch durch Innentäter beim Betreiber des Aktensystems) durch die folgenden 
 hier beschriebenen Maßnahmen zusätzlich geschützt.
 
-## Unterschied von ePA-2.6 zu ePA-3.0.x. (ePA-3.1.x) 
-
-Ziel ist es den Export-Paket-Mechanismus von ePA-2.6 so weit wie möglich zu
-übernehmen. Da es bei ePA 3.x keine Kontext-Schlüssel mehr gibt, wird für den
-Export der "Null-Schlüssel" (0...0 (256 Bit)) anstatt dessen verwendet. Es
-gibt aus sicherheitstechnischer Perspektive also nur noch eine effektive
-Verschlüsselungsschicht -- aus Implementierungssicht immer noch zwei
-(Null-Schlüssel innere Verschlüsselungsschicht, VAU-ENC bei der äußeren
-Verschlüsselungsschicht).
-
-Für zukünftige ePA-AS-Versionen werden wir mit dem Export-Mechanismus auf eine
-synchrone VAU-zu-VAU-Kommunikation über das VAU-Protokoll wechseln. Die "alte"
-VAU (altes Aktensystem) wird dann die zu exportierten Daten (ZIP-File) über das
-VAU-Protokoll an die "neue" VAU (also im neuen Aktensystem) senden. Das Ziel
-dabei ist, bessere Sicherheitseigenschaften (Forward-Secrecy, Quantum
-Computing Resistance) zu erreichen.
-
 ## Schlüsselmaterial zum Schutz des Export-Paketes
 
 Zum Schutz des Export-Pakets ist folgendes Schlüsselmaterial erforderlich:
 
-- Kontextschlüssel welcher hier konstant 0...0 Bits (256 Bit) ist.
-  Alle zu exportierenden Daten werden mittels des Kontextschlüssel symmetrisch
-  verschlüsselt.
+- Kontextschlüssel des Versicherten (KS). Dieser wird dem Verarbeitungskontext
+  beim Öffnen des Verarbeitungskontextes übergeben. Alle zu exportierenden
+  Daten werden mittels des Kontextschlüssel symmetrisch verschlüsselt.
 
 - Schlüsselmaterial der VAU zur Content-Signatur beim Betreiber
   (VAU-SIG-Zertifikat C.VAU-SIG mit öffentlichem Schlüssel Pub-VAU-SIG, privatem
@@ -51,25 +38,31 @@ Zum Schutz des Export-Pakets ist folgendes Schlüsselmaterial erforderlich:
   verwendet werden.
 
 ## Grundsätzlicher Ablauf der Verschlüsselung des Export-Pakets beim alten Anbieter
-(vollständige Kommunikation der Aktensysteme bei Aktensystemwechsel: siehe gemSpec_Aktensystem_ePAfueralle#3.2 Health Record Relocation Service)
 
-Der Kostenträger initiert die Erstellung des Exportpakets durch den Aufruf der Operation startPackageCreation der Schnittstelle I_Health_Record_Relocation_Service.
-
-Gemäß [Exportpaket](./docs/Healthrecord%20relocation%20export%20package.adoc) werden die zu übertragenden Inhalte des Aktenkontos in einer einzelnen ZIP-Datei zusammengefasst.
+Das ePA-FdV ruft die Operation I\_Account\_Management\_Insurant::SuspendAccount
+auf und übergibt dem Verarbeitungskontext dabei das VAU-ENC-Zertifikat
+C.VAU-ENC des neuen Anbieters. Gemäß Anforderung
+gemSpec\_Dokumentenverwaltung#A\_14855 wird bei Ausführung der Operation
+SuspendAccount eine ZIP-Datei mit den zu übertragenden Daten des Versicherten
+erstellt. 
 
 Für den Schutz der ZIP-Datei sind folgende Schritte durchzuführen:
 
-1. Das ENC-Zertifikat des empfangenden Aktensystems wird von HSM unter Verwendung der Regel hsm-r7 abgerufen. 
+1. Der Verarbeitungskontext prüft das übergebene VAU-ENC-Zertifikat C.VAU-ENC
+   gemäß `TUC_PKI_018`(oid\_epa\_vau). Falls die Prüfung fehlschlägt, wird eine
+   Fehlermeldung `CERTIFICATE_INVALID`an das ePA-FdV gemeldet. Ansonsten
+   wird mit Schritt (2) fortgefahren. 
 
 2. Der Verarbeitungskontext bildet einen 256-Bit-Zufallswert und kodiert diesen
    hexadezimal. Das Ergebnis wird als `export_paket_name` bezeichnet und muss
-   der Dateinamen des Exportpakets sein. Der Rückgabewert von startPackageCreation ist die downloadurl, wobei der Dateiname in dieser URL 
+   der Dateinamen des Exportpakets sein. Dem ePA-FdV wird dann als
+   Ausgangsparameter die PackageURL, wobei der Dateiname in dieser URL 
    `export_paket_name` sein muss. Weiterhin darf der Pfadname in der URL
    keine personenbeziehbaren Daten enthalten.
 
 3. Der Verarbeitungskontext verschlüsselt die ZIP-Datei symmetrisch (wie sonst
    auch bei ePA üblich AES/GCM, IV=96-Bit zufällig erzeugt, 128-Bit Auth-Tag)
-   mit dem Kontextschlüssel KS (Null-Schüssel) und erhält `ciphertext_1`.
+   mit dem Kontextschlüssel KS und erhält `ciphertext_1`.
 
 4. Der Verarbeitungskontext signiert mit dem privaten VAU-Signaturschlüssel
    Priv-VAU-SIG den Wert `ciphertext_1 ||  export_zeit || KVNR` und erhält als
@@ -84,15 +77,20 @@ Für den Schutz der ZIP-Datei sind folgende Schritte durchzuführen:
    Aktensystems und erhält `ciphertext_2`.
 
 6. Der Verarbeitungskontext stellt `ciphertext_2` unter der erzeugten
-   downloadurl (siehe Schritt 2) außerhalb der VAU zum Download für den neuen
+   PackageURL (siehe Schritt 2) außerhalb der VAU zum Download für den neuen
    Anbieter bereit. 
 
 ## Grundsätzlicher Ablauf der Entschlüsselung des Export-Pakets beim neuen Anbieter
-(vollständige Kommunikation der Aktensysteme bei Aktensystemwechsel: siehe gemSpec_Aktensystem_ePAfueralle#3.2 Health Record Relocation Service)
+Das ePA-FdV ruft die Operation `I_Account_Management_Insurant::ResumeAccount`
+beim neuen Aktenanbieter auf und übergibt dem Verarbeitungskontext dabei die
+zuvor erhaltene PackageURL. Gemäß Anforderung
+`gemSpec_Dokumentenverwaltung#A_14905` lädt der neue Anbieter das Export-Paket
+vom durch PackageURL gegebenen Downloadpunkt und importiert die Daten des
+Versicherten in das Aktenkonto beim neuen Anbieter. Hierzu muss das
+Export-Paket in der VAU entschlüsselt werden, um die ZIP-Datei mit den Daten
+des Versicherten zu erhalten.
 
-Der neue Kostenträger initiert den Import eines bereitgestellten Exportpaket eines anderen Aktensystems nach Erhalt der downloadurl durch den Aufruf der Operation startPackageImport der Schnittstelle I_Health_Record_Relocation_Service.
-
-Für die Entschlüsselung der erhaltenen ZIP-Datei sind folgende Schritte durchzuführen:
+Für die Entschlüsselung der ZIP-Datei sind folgende Schritte durchzuführen:
 
 1. Der Verarbeitungskontext entschlüsselt `ciphertext_2` mittels
    ECIES-Verschlüsselungsverfahren unter Nutzung des privaten Schlüssels
@@ -100,22 +98,38 @@ Für die Entschlüsselung der erhaltenen ZIP-Datei sind folgende Schritte durchz
    `plaintext_2 = [1, ciphertext_1, export_zeit, KVNR, C.VAU-SIG, signature]`.
 
 2. Der Verarbeitungskontext prüft die Signatur signature mittels des
-   mitgelieferten Zertifikats C.VAU-SIG des alten Anbieters.
+   mitgelieferten Zertifikats C.VAU-SIG des alten Anbieters. Falls die Prüfung
+   fehlschlägt, wird eine Fehlermeldung `CERTIFICATE_INVALID` an das ePA-FdV
+   gemeldet. Ansonsten wird mit Schritt 3. fortgefahren.
 
 3. Der Verarbeitungskontext prüft, dass KVNR mit der KVNR des angemeldeten
    Versicherten übereinstimmt und die `export_zeit` nicht mehr als x abweicht.
    Die `export_zeit` soll nicht älter als 30 Tage sein.
+   Falls die Prüfung fehlschlägt, wird eine Fehlermeldung `INTERNAL_ERROR` an
+   das ePA-FdV gemeldet. Ansonsten wird mit Schritt 3. fortgefahren.
 
 4. Der Verarbeitungskontext entschlüsselt `ciphertext_1` mit dem Kontextschlüssel
    KS und erhält die unverschlüsselte ZIP-Datei für den Import.
 
-5. Der erfolgreich Import der Daten wird an das bereitstellende Aktensystem durch Verwendung der Operation deleteExportPackage der Schnittstelle I_Information_Service_Accouts gemeldet. 
+## Hinweis zum Sicherheitsziel
 
+Die zusätzliche (also "doppelte") Verschlüsselung des Export-Pakets mit dem
+VAU-ENC-Schlüssel des neuen Anbieters erfolgt, um das Export-Paket auch im
+Falle eines kompromittierten Akten- und/oder Kontextschlüssels zu sichern. So
+können insbesondere auch Innentäter beim Betreiber, die sich das Export-Paket
+kopieren und irgendwann an einen kompromittierten Akten- und/oder
+Kontextschlüssel gelangen, nicht auf die Daten des Versicherten zugreifen.
+Dies bedeutet auch, dass man sich bei einem kompromittierten Kontextschlüssel
+nicht auf die Sicherheitsleistung des Kontextschlüssels in Bezug auf den
+Integritätsschutz bei `ciphertext_1` verlassen kann. Deshalb erzeugt die
+exportierende VAU eine Signatur des verschlüsselten Exportpakets inkl.
+Metadaten (Exportzeit, KVNR). Dadurch ist sichergestellt, dass das Export-Paket
+von der exportierenden VAU kommt. Dies verhindert insbesondere auch, dass
+Innentäter beim Betreiber gültige Export-Pakete beliebig selbst erzeugen
+können.
 
 ## Formate
-### Chiffrat\_2 (äußere Verschlüsselungsschicht)
-
-Eine '\x01' plus das normale ECIES-Chiffrat:
+### Chiffrat\_2 (eine '\x01' plus das normale ECIES-Chiffrat)
 
 1. ein Byte \x01
 2. 32-Byte X-Wert ephemerer Schlüssel 
@@ -165,7 +179,7 @@ prüfen. Signaturen können nur auf binär-Daten geprüft werden. Deshalb sind d
 Exportzeit und die KVNR ebenfalls als binary string kodiert.
 
 
-### Chiffrat\_1 (innere Verschlüsselungsschicht)
+### Chiffrat\_1
 
 Das ein AES/GCM-Chiffrat, verschlüsselt mit dem Kontext-Schlüssel und wie
 üblich ein Binärstring beginnend:
@@ -179,24 +193,34 @@ Das ein AES/GCM-Chiffrat, verschlüsselt mit dem Kontext-Schlüssel und wie
 Auf einem System, auf dem Docker installiert ist, kann man den Beispiel-Code
 in wenigen Sekunden zum Starten bekommen:
 
-    $ docker pull andreashallof/as-wechsel:3.0
-    $ docker run -it andreashallof/as-wechsel:3.0 /bin/bash
-
-    root@3f324c6446c3:/as-wechsel# ./gen-test-daten.sh 10MiB
+    $ docker pull andreashallof/as-wechsel:1.0
+    $ docker run -it andreashallof/as-wechsel:1.0 /bin/bash
+    root@e29f79a5ae10:/as-wechsel# ./gen-test-daten.sh 10MiB
     10240+0 records in
     10240+0 records out
-    10485760 bytes (10 MB, 10 MiB) copied, 0.0758072 s, 138 MB/s
-
-    root@3f324c6446c3:/as-wechsel# ./alte_vau_instanz.py
-    zu exportierenden Testdaten ("ZIP-Archiv"): 10485760 Bytes
-    Export-Paket für den Dowloadpunkt (Name, Größe)=(a2decb106689b187a3475b86a0d32b5f2a472fbed75bec7ca7f0f2cbbe3af785, 10486586)
-    root@3f324c6446c3:/as-wechsel# ./neue_vau_instanz.py a2decb106689b187a3475b86a0d32b5f2a472fbed75bec7ca7f0f2cbbe3af785
-    Die Export-Daten (ZIP-File) haben die Größe 10485760 und den Hashwert e5b844cc57f57094ea4585e235f36c78c1cd222262bb89d53c94dcb4d6b3e55d.
-
-    root@3f324c6446c3:/as-wechsel# sha256sum test-daten.bin
+    10485760 bytes (10 MB, 10 MiB) copied, 0.134014 s, 78.2 MB/s
+    root@e29f79a5ae10:/as-wechsel# sha256sum test-daten.bin 
     e5b844cc57f57094ea4585e235f36c78c1cd222262bb89d53c94dcb4d6b3e55d  test-daten.bin
+    root@e29f79a5ae10:/as-wechsel# ./alte_vau_instanz.py 
+    zu exportierenden Testdaten ("ZIP-Archiv"): 10485760 Bytes
+    Export-Paket für den Dowloadpunkt (Name, Größe)=(a0779c88da19e8f5ecd6bca8f10b33a208c8b4eef01896965cc3c77dec14037c, 10486586)
+    root@e29f79a5ae10:/as-wechsel# ls -l
+    total 20536
+    -rw-r--r-- 1 root root      231 Jun 15 11:24 0_alias.sh
+    -rw-r--r-- 1 root root      709 Jun 25 06:57 Dockerfile
+    -rw-r--r-- 1 root root      445 Jun 25 05:46 README-Dockerfile.md
+    -rw-r--r-- 1 root root    10051 Jun 25 06:39 README.md
+    -rw-r--r-- 1 root root 10486586 Jun 25 07:51 a0779c88da19e8f5ecd6bca8f10b33a208c8b4eef01896965cc3c77dec14037c
+    -rwxr-xr-x 1 root root     4490 Jun 20 16:45 alte_vau_instanz.py
+    -rwxr-xr-x 1 root root      435 Jun 24 13:48 gen-test-daten.sh
+    -rwxr-xr-x 1 root root     5562 Jun 20 19:59 neue_vau_instanz.py
+    drwxr-xr-x 2 root root     4096 Jun 20 08:14 pki
+    -rw-r--r-- 1 root root       47 Jun 24 12:34 requirements.txt
+    -rw-r--r-- 1 root root 10485760 Jun 25 07:51 test-daten.bin
+    root@e29f79a5ae10:/as-wechsel# ./neue_vau_instanz.py a0779c88da19e8f5ecd6bca8f10b33a208c8b4eef01896965cc3c77dec14037c 
+    Die Export-Daten (ZIP-File) haben die Größe 10485760 und den Hashwert e5b844cc57f57094ea4585e235f36c78c1cd222262bb89d53c94dcb4d6b3e55d.
+    root@e29f79a5ae10:/as-wechsel# 
 
-    root@3f324c6446c3:/as-wechsel#
 
 ## Dependencies
 
@@ -212,8 +236,8 @@ Die python-Programm benötigen python3 mit den Bibliotheken `cryptography` und
 
 Beispiel: 
 
-- Ubuntu `apt install python-cryptography python3-cbor2`
-- Arch Linux `pacman -S extra/python-cryptography community/python-cbor2`
+- Ubuntu `apt install python-cryptography python3-cbor`
+- Arch Linux `pacman -S extra/python-cryptography community/python-cbor`
 
 ### via pip
 

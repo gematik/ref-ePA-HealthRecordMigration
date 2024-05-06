@@ -1,4 +1,4 @@
-FROM python:3.11
+FROM python:3.9
 
 MAINTAINER Andreas Hallof, andreas.hallof@googlemail.com
 
@@ -11,7 +11,7 @@ RUN apt-get --yes install vim
 RUN apt-get --yes install apt-utils
 RUN apt-get --yes install libmpc-dev libmpfr-dev libmpfr-doc 
 RUN apt-get --yes install libldap2-dev libsasl2-dev
-RUN apt-get --yes install python3-cryptography python3-cbor2
+RUN apt-get --yes install python-cryptography python3-cbor
 
 RUN pip install pyOpenSSL 
 
@@ -20,5 +20,5 @@ WORKDIR /as-wechsel
 
 RUN pip install -r requirements.txt
 
-CMD ["echo", "Starte mich interaktiv mit 'docker run -it as-wechsel:3.0 /bin/bash'"]
+CMD ["echo", "Starte mich interaktiv mit 'docker run -it as-wechsel:0.1 /bin/bash'"]
 

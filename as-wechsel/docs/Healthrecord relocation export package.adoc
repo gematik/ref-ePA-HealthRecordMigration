@@ -1,0 +1,576 @@
+ifndef::env-github[]
+ifndef::imagesdir[:imagesdir: ../../images]
+ifndef::plantumlsimages[:plantumlsimages: plantuml]
+ifndef::chapterplantumlsdir[:chapterplantumlsdir: ../../src/plantuml]
+endif::[]
+ifdef::env-github[]
+:source-highlighter: rouge
+:icons:
+:imagesdir: ../../images
+:tip-caption: :bulb:
+:note-caption: :information_source:
+:important-caption: :heavy_exclamation_mark:
+:caution-caption: :fire:
+:warning-caption: :warning:
+:plantumlsimages: plantuml
+:plantumlsdir: ../../src/plantuml
+:xrefstyle: full
+:sectanchors:
+:numbered:
+:sectnums:
+endif::[]
+
+ifdef::env-github[]
+image::Gematik_Logo_Flag.png[gematik,width=20%,float="right"]
+endif::[]
+
+toc::[]
+
+:sectnums:
+
+[#_exportpackage]
+== Exportpaket (Daten)
+
+Definition der Formate für die bei einem Anbieterwechsel in einem Exportpaket zu übertragenen Daten eines ePA Aktenkontos.
+
+=== Zip-Datei
+
+Die einzelnen Artefakte eines Aktenkontos werden in einer einzelnen Zip-Datei mit folgender Struktur abgelegt: 
+
+[cols="1,1,2a,2a,1"]
+|===
+|Root
+|Pfad (Verzeichnis)
+|Elemente (Datei(en))
+|Inhalt
+|see
+
+|ZIP/ ||||
+
+||IHE_XDS/|gemäß <<ITI-TF2>>, ITI-32|XDS Dokumente| <<IHE_XDS>>
+||Medication/|M_nnnnnn.json { 0 .. * }|FHIR Resourcen| <<Medication>>
+||AuditEvents/|A_nnnnnn.json { 0 .. * }|Audit Events| <<AuditEvents>>
+||Entitlements/|E_nnnnnn.json { 0 .. * }|Befugnisse| <<Entitlements>>
+||(root)|Consents.json {1 .. 1}|Widersprüche| <<Consents>>
+||(root)|Constraints.json {1 .. 1}|verborgene Elemente| <<Constraints>>
+||(root)|Emails.json {1 .. 1}|E-Mail Adressen Vertreter| <<Emails>>
+||(root)|BlockedUsers.json {1 .. 1}|ausgeschloßene Nutzer| <<BlockedUsers>>
+|===
+
+Die Komprimierung der Zip-Datei erfolgt mit Kompressionsmethode 'no compression' (0) oder 'Deflate' (8) gemäß der Vorgaben in  <<zip>>.
+
+Die Zip-Datei wird mit Dateinamen 'Data.zip' in das Exportpaket übernommen.
+
+---
+==== IHE_XDS
+Der Export der Daten des XDS Document Service erfolgt analog zum Vorgehen in ePA-2.6. 
+Policy Documents sind nicht mehr vorhanden und werden daher nicht berücksichtigt. Audit Events werden gemäß der Vorgaben in <<AuditEvents>> in das Exportpaket aufgenommen. 
+
+Im Ordner IHE_XDS werden alle Dokumente und alle Metadaten gemäß IHE ITI Cross-Enterprise Document Media Interchange (XDM) - Distribute Document Set on Media [ITI-32] für den Export abgelegt (<<ITI-TF2>>).
+
+Abweichend von den Vorgaben aus [ITI-32] muss:
+
+* der ursprüngliche Inhalt von DocumentEntry.URI in das Metadatum DocumentEntry.originalURI kopiert werden. DocumentEntry.originalURI wird ausschließlich im Rahmen des Aktenumzugs verwendet (d.h. es ist kein Metadatum von XDS-Registry) und wie die anderen Metadaten auch in METADATA.XML übertragen.
+* für Dokumente ohne DocumentEntry.title dieses Metadatum mit dem auf den reinen Dateinamen reduzierten Wert (d.h. ohne Pfadangaben) von documentEntry.URI befüllt und in METADATA.XML übernommen werden.
+
+---
+==== Medication
+Innerhalb dieses Verzeichnisses werden alle Daten des Medical Service 'medication' abgelegt.
+
+Jede FHIR-Resource wird dabei im Format JSON als jeweils eine Datei abgelegt. Der Dateiname ist M_nnnnnn.json mit 'nnnnnn' aus der Menge {000000, 999999}, beginnend mit 'nnnnnn' = 000000 und fortlaufender Zählung.
+
+Die jeweils enthaltene FHIR-Resource einer Datei ist innerhalb der JSON Struktur über das Attribut "resourceType" identifizerbar, das spezifische Profil der Resource über das Attribut "meta.profile".
+
+Die exportierbaren FHIR-Resourcen verwenden teilweise Referenzen auf weitere Resourcen ("reference"). Zur Vermeidung nicht auflösbarer Referenzen bei einem Import des Exportpakets werden die Resourcen in der vorgegebenen Reihenfolge angeordnet, so dass referenzierte Resourcen vor dem Import von Resourcen mit Referenzen schon bekannt sind.
+
+Die Resourcenreihenfolge im Exportpaket ergibt sich zu: 
+
+. Organization
+. Practitioner
+. PractitionerRole (enthält Referenzen auf Organization und Practitioner)
+. Medication
+. MedicationRequest (enthält Referenzen auf Medication und PractitionerRole)
+. MedicationDispense (enthält Referenzen auf Medication und Organization)
+
+Bei einem Import sollen die einzelnen Dateien gemäß der Dateinummerierung, startend bei M_000000.json, verarbeitet werden. D.h.: Alle Nummerierungen der Dateien mit Resourcen des Typs 'Organization' sind kleiner als jede Nummerierung der Dateien mit Resourcen des Typs 'Practitioner' und alle Nummerierungen zu 'Practitioner' sind kleiner als jede Nummerierung zu 'PractitionerRole'. 
+
+Schema: https://simplifier.net/epa-medication
+
+Beispiel: Inhalt M_123456.json (Resource: 'Medication')
+
+[source,json]
+----
+{
+    "resourceType": "Medication",
+    "id": "example-epa-medication-1",
+    "meta": {
+        "profile":  [
+            "https://gematik.de/fhir/epa-medication/StructureDefinition/epa-medication"
+        ]
+    },
+    "extension":  [
+        {
+            "valueIdentifier": {
+                "system": "https://gematik.de/fhir/epa-medication/sid/rx-prescription-process-identifier",
+                "value": "160.153.303.257.459_20240122"
+            },
+            "url": "https://gematik.de/fhir/epa-medication/StructureDefinition/rx-prescription-process-identifier-extension"
+        }
+    ],
+    "identifier":  [
+        {
+            "system": "https://gematik.de/fhir/epa-medication/sid/epa-medication-unique-identifier",
+            "value": "583DC39E2BFFBFD6C05AE0AC404516309F56729EA44813F9FB881C73EE58EA5D"
+        },
+        {
+            "system": "https://gematik.de/fhir/epa-medication/sid/rx-originator-process-identifier",
+            "value": "6ae6a7ca-c9b5-46bf-9411-2ba49d96f988_160.153.303.257.459"
+        }
+    ],
+    "status": "active",
+    "code": {
+        "coding":  [
+            {
+                "system": "http://fhir.de/CodeSystem/ask",
+                "code": "5682",
+                "display": "Ibuprofen"
+            }
+        ]
+    }
+}
+----
+
+---
+==== AuditEvents
+Innerhalb dieses Verzeichnisses werden alle Daten des Audit Event Services abgelegt.
+
+Berücksichtigt werden dabei nur Audit Event FHIR-Resourcen und keinerlei gerenderte Auszüge (PDFs).
+
+Jede FHIR-Resource des Typs "AuditEvent" (Profil: epa-auditevent) wird dabei im Format JSON als jeweils eine Datei abgelegt. Der Dateiname ist A_nnnnnn.json mit 'nnnnnn' aus der Menge {000000, 999999}, beginnend mit 'nnnnnn' = 000000 und fortlaufender Zählung.
+
+Schema: https://simplifier.net/epa/epaauditevent
+
+Beispiel: Inhalt A_111111.json (Event: cancel medication dispense)
+
+[source,json]
+----
+{
+    "resourceType": "AuditEvent",
+    "id": "epa-auditevent-example",
+    "meta": {
+        "profile":  [
+            "https://gematik.de/fhir/epa/StructureDefinition/epa-auditevent"
+        ]
+    },
+    "type": {
+        "system": "http://terminology.hl7.org/CodeSystem/audit-event-type",
+        "code": "rest",
+        "display": "RESTful Operation"
+    },
+    "action": "U",
+    "recorded": "2025-01-01T08:00:00Z",
+    "outcome": "0",
+    "agent":  [
+        {
+            "type": {
+                "coding":  [
+                    {
+                        "system": "http://dicom.nema.org/resources/ontology/DCM",
+                        "code": "110150",
+                        "display": "Application"
+                    }
+                ]
+            },
+            "who": {
+                "identifier": {
+                    "system": "https://gematik.de/fhir/sid/telematik-id",
+                    "value": "9-883110000012345"
+                }
+            },
+            "altId": "9-883110000012345",
+            "name": "E-Rezept-Fachdienst",
+            "requestor": "false"
+        }
+    ],
+    "source": {
+        "observer": {
+            "display": "Elektronische Patientenakte Fachdienst"
+        },
+        "type":  [
+            {
+                "system": "https://gematik.de/fhir/epa/CodeSystem/epa-auditevent-sourcetype-cs",
+                "code": "MEDICATIONSVC",
+                "display": "Medication Service"
+            }
+        ]
+    },
+    "entity":  [
+        {
+            "name": "Medical Service",
+            "description": "operation:cancel-dispensation"
+        }
+    ]
+}
+----
+
+---
+==== Consents
+Alle Entscheidungen zu widerspruchsfähigen Funktionen der ePA werden in einer JSON-Datei **Consents.json** zusammengefasst.
+
+Der grundsätzliche Widerspruch gegen die Nutzung der ePA ist nicht Bestandteil dieser Datei.
+
+Schema:
+[source,json]
+----
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",  
+  "$id": "https://gematik.de/consents.json",  
+  "title": "Consents",  
+  "description": "Consent decision entries",  
+  "type": "array",
+  "items": {
+    "type": "object",
+    "properties": { 
+      "functionClass": { 
+        "type": "string",
+        "enum": ["healthCareProcess"]
+      },
+      "function": { 
+        "type": "string",
+        "enum": ["medication", "erp-submission"]
+      },
+      "consent": { 
+        "type": "string",
+        "enum": ["permit", "deny"]
+      }
+    }
+  }
+}
+----
+
+Beispiel: Inhalt Consents.json
+[source,json]
+----
+[
+	{
+		"functionClass": "healthCareProcess",
+		"function": "medication",
+		"consent": "deny"
+	},
+	{
+		"functionClass": "healthCareProcess",
+		"function": "erp-submission",
+		"consent": "permit"
+	}
+]
+----
+
+---
+==== Constraints
+Alle Einträge (Assignments) der General Deny Policy werden in einer JSON-Datei **Constraints.json** zusammengefasst.
+
+Schema:
+[source,json]
+----
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",  
+  "$id": "https://gematik.de/constraints.json",  
+  "title": "Constraints",  
+  "description": "Entries of the general deny policy",  
+  "type": "array",
+  "items": {
+    "oneOf": [
+        {
+          "type": "object",
+          "properties":{
+            "policyType": {
+              "type": "string",
+              "enum": ["gdp"]
+            },
+            "denyType": {
+              "type": "string",
+              "enum": ["document"]
+            },
+            "rootDocumentId": { 
+              "type": "string"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "properties":{
+            "policyType": {
+              "type": "string",
+              "enum": ["gdp"]
+            },
+            "denyType": {
+              "type": "string",
+              "enum": ["folder"]
+            },
+            "folderUUID": { 
+              "type": "string"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "properties":{
+            "policyType": {
+              "type": "string",
+              "enum": ["gdp"]
+            },
+            "denyType": {
+              "type": "string",
+              "enum": ["category"]
+            },
+            "categoryId": { 
+              "type": "string"
+            }
+          }
+        }
+    ]
+  }
+}
+----
+
+Beispiel: Inhalt Constraints.json mit 3 Einträgen
+[source,json]
+----
+[
+  {
+    "policyType": "gdp",
+    "denyType": "document",
+    "rootDocumentId": "4fa70820-2384-4001-80a9-7bbd5e085efb^^^^urn:gematik:iti:xds:2023:rootDocumentUniqueId"
+  },
+  {
+    "policyType": "gdp",
+    "denyType": "category",
+    "categoryId": "pregnancy_childbirth"
+  },
+  {
+    "policyType": "gdp",
+    "denyType": "folder",
+    "folderUUID": "urn:uuid:4fa70820-2384-4001-80a9-7bbd5e085efb"
+  }
+]
+----
+
+---
+==== Entitlements
+Innerhalb dieses Verzeichnisses werden alle Daten des Entitlement Managements abgelegt.
+
+Jedes Entitlement wird dabei als jeweils eine Datei abgelegt. Der Dateiname ist E_nnnnnn.json mit 'nnnnnn' aus der Menge {000000, 999999}, beginnend mit 'nnnnnn' = 000000 und fortlaufender Zählung.
+
+Entitlements werden nicht direkt aus dem Aktenkonto in die Zip-Datei des Exportpakets übernommen. Die sicherheitsrelevanten Attribute, KVNR des Aktenkontos, actorId des befugten Nutzers (KVNR oder Telematik-Id) sowie das Ende der Gültigkeit der Befugnis (validTo), werden in einem JWT zusammengefasst (gemäß gemSpec_Aktensystem_ePAfueralle, A_25719*) und mit der Identität des Aktensystems (ID.FD.SIG) signiert. 
+Bei einem Import im empfangenden Aktensystem muss dieses JWT mittels HSM Regel 'rr5' prüfbar sein. 
+
+Die Elemente oid, displayName, issued-at, issued-actorId und issued-displayName werden unverändert übernommen und sind nicht Bestandteil des JWT.
+
+Bei einem Import wird das JWT durch HSM Regel 'rr5' in eine CMAC gesicherte Befugnis konvertiert und mit den weiteren Daten (oid, displayName, ...) im neuen Aktenkonto abgelegt. 
+
+  Inhalt des JWT:
+    - protected_header:
+      - "typ": "JWT"
+      - "alg": "ES256" 
+      - "x5c": signature certificate C.FD.SIG
+    - payload:
+      - "iat": issued at timestamp
+      - "exp": expiry timestamp (always iat + 8 days)
+      - "insurantid": the health record identifier this entitlement is assoctiated to
+      - "actorId": Telematik-Id or KVNR
+      - "validTo": Expiry date-time of entitlement in format according to rfc3339
+    - signature: 
+      - contains token signature
+
+
+Schema für eine Befugnis:
+[source,json]
+----
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",  
+  "$id": "https://gematik.de/entitlement.json",  
+  "title": "Entitlement",  
+  "description": "An entitlment in an export package",  
+  "type": "object",
+  "properties": {
+    "entitlement":{ 
+      "description": "jwt containing the security relevant data",
+      "type": "string"
+    },
+    "oid": { 
+      "type": "string"
+    },
+    "displayName": { 
+      "type": "string"
+    },
+    "issued-at":{ 
+      "type": "string",
+      "format": "date-time"
+    },
+    "issued-actorId": { 
+      "type": "string"
+    },
+    "issued-displayName": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}
+----
+
+Beispiel: Inhalt E_000001.json
+
+[source,json]
+----
+{
+    "entitlement": "a jwt containing the security relevant data",
+    "oid": "1.2.276.0.76.4.51",
+    "displayName": "Zahnarztpraxis Hillary Gräfin Münchhausen",
+    "issued-at": "2025-10-01T14:00:00Z",
+    "issued-actorId": "X999999999",
+    "issued-displayName": "Name of health record owner"
+}
+----
+
+---
+==== BlockedUsers
+Alle Einträge (Assignments) der Blocked User Policy werden in einer JSON-Datei **BlockedUsers.json** zusammengefasst. Dabei wird auch 
+der Zeitpunkt der Erstellung des Eintrags exportiert und unverändert in das importierende System übertragen. Das importierende System darf keine eigenen Zeitstempel (Zeitpunkt des Imports) für die Einträge verwenden.
+
+Schema:
+[source,json]
+----
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",  
+  "$id": "https://gematik.de/blockedUsers.json",  
+  "title": "Blocked users",  
+  "description": "Entries of the blocked user policy in an export package",  
+  "type": "array",
+  "items": {
+    "actorId":{ 
+      "type": "string"
+    },
+    "oid": { 
+      "type": "string"
+    },
+    "displayName": { 
+      "type": "string"
+    },
+    "at":{ 
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}
+----
+
+Beispiel: Inhalt BlockedUsers.json mit 4 Einträgen
+
+[source,json]
+----
+ [
+    {
+      "actorId": "2-883110000092414",
+      "oid": "1.2.276.0.76.4.51",
+      "displayName": "Zahnarztpraxis Norbert Freiherr Schomaker",
+      "at": "2025-07-01T12:00:00Z"
+    },
+    {
+      "actorId": "1-883110000092404",
+      "oid": "1.2.276.0.76.4.50",
+      "displayName": "Praxis Dr. Annamaria Heckhausén",
+      "at": "2025-07-02T12:00:00Z"
+    },
+    {
+      "actorId": "2-883110000092427",
+      "oid": "1.2.276.0.76.4.51",
+      "displayName": "Zahnarztpraxis Dr. Alfons Adamiç",
+      "at": "2025-07-03T12:00:00Z"
+    },
+    {
+      "actorId": "3-883110000092469",
+      "oid": "1.2.276.0.76.4.54",
+      "displayName": "Süd Apotheke",
+      "at": "2025-07-04T12:00:00Z"
+    }
+  ]
+----
+
+---
+==== Emails
+Die E-Mail Adressen der zum Zeitpunkt der Erstellung des Exportpakets befugten Vertreter des Versicherten werden in einer 
+JSON-Datei **Emails.json** zusammengefasst. Es werden dabei jeweils alle vorhandenen E-Mails eines Vertreters (identifiziert über dessen KVNR) exportiert.
+Die KVNR eines befugten Vertreters entspricht der _actorId_ der Befugnis, wenn diese für die oid _oid_versicherter_ ausgestellt 
+ist (ausgenommen statische Befugnisse).
+
+Im importierenden Aktensystem können einzelne oder auch alle E-Mail Adressen aus einem Exportpaket schon vorhanden sein. Dieses ist kein 
+Fehler, die entsprechenden Einträge des Exportpakets können dann ignoriert werden. Die Benachrichtigung der Vertreter über den Umzug eines vertretenen Aktenkontos müssen jedoch auch in diesem Fall erfolgen. 
+
+Die Attribute _identifier_ und _createdAt_ werden nicht exportiert. Diese Attribute werden durch das importierende Aktensystem neu vergeben.
+
+Schema:
+[source,json]
+----
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",  
+  "$id": "https://gematik.de/emails.json",  
+  "title": "Emails",  
+  "description": "Email addresses of representatives in an export package",  
+  "type": "array",
+  "items": {
+    "kvnr":{ 
+      "type": "string"
+    },
+    "email": { 
+      "type": "string"
+    },
+    "actor": { 
+      "type": "string"
+    }
+  }
+}
+----
+
+Beispiel: Inhalt Emails.json mit 4 Einträgen
+
+[source,json]
+----
+[
+    {
+      "kvnr" : "A123456789", 
+      "email": "m.mustermann@gematik.de",
+      "actor": "Betriebskrankenkasse AAA"
+    },
+    {
+      "kvnr" : "B987654321",
+      "email": "max.mustermann@gematik.de",
+      "actor": "Max Mustermann"
+    },
+    {
+      "kvnr" : "C112233445",
+      "email": "max.mustermann123@gematik.de",
+      "actor": "Max Mustermann"
+    },
+    {
+      "kvnr" : "C112233445",
+      "email": "mustermann.max@ti.de",
+      "actor": "Max Mustermann"
+    }
+  ]
+----
+
+---
+[bibliography]
+=== Verweise
+
+* [[[zip]]] PKWARE APPNOTE.TXT - .ZIP File Format Specification.
+Version: 6.3.10 
+Revised: Nov 01, 2022
+Copyright (c) 1989 - 2014, 2018, 2019, 2020, 2022 PKWARE Inc., All Rights Reserved.
+https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT^
+
+* [[[ITI-TF2]]] IHE IT Infrastructure (ITI) Technical Framework, Volume 2.
+Revision 20.0
+August 4, 2023
+Copyright (c) 2000 — 2024 IHE International.
+https://profiles.ihe.net/ITI/TF/Volume2/index.html
