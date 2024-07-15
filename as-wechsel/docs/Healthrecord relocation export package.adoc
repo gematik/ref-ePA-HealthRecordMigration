@@ -53,6 +53,7 @@ Die einzelnen Artefakte eines Aktenkontos werden in einer einzelnen Zip-Datei mi
 ||Entitlements/|E_nnnnnn.json { 0 .. * }|Befugnisse| <<Entitlements>>
 ||(root)|Consents.json {1 .. 1}|Widersprüche| <<Consents>>
 ||(root)|Constraints.json {1 .. 1}|verborgene Elemente| <<Constraints>>
+||(root)|EmailOwner.json {1 .. 1}|E-Mail Adresse Versicherter| <<Emails>>
 ||(root)|Emails.json {1 .. 1}|E-Mail Adressen Vertreter| <<Emails>>
 ||(root)|BlockedUsers.json {1 .. 1}|ausgeschloßene Nutzer| <<BlockedUsers>>
 |===
@@ -447,18 +448,21 @@ Schema:
   "description": "Entries of the blocked user policy in an export package",  
   "type": "array",
   "items": {
-    "actorId":{ 
-      "type": "string"
-    },
-    "oid": { 
-      "type": "string"
-    },
-    "displayName": { 
-      "type": "string"
-    },
-    "at":{ 
-      "type": "string",
-      "format": "date-time"
+    "type": "object",
+    "properties": {
+      "actorId":{ 
+        "type": "string"
+      },
+      "oid": { 
+        "type": "string"
+      },
+      "displayName": { 
+        "type": "string"
+      },
+      "at":{ 
+        "type": "string",
+        "format": "date-time"
+      }
     }
   }
 }
@@ -498,15 +502,33 @@ Beispiel: Inhalt BlockedUsers.json mit 4 Einträgen
 
 ---
 ==== Emails
-Die E-Mail Adressen der zum Zeitpunkt der Erstellung des Exportpakets befugten Vertreter des Versicherten werden in einer 
-JSON-Datei **Emails.json** zusammengefasst. Es werden dabei jeweils alle vorhandenen E-Mails eines Vertreters (identifiziert über dessen KVNR) exportiert.
-Die KVNR eines befugten Vertreters entspricht der _actorId_ der Befugnis, wenn diese für die oid _oid_versicherter_ ausgestellt 
-ist (ausgenommen statische Befugnisse).
+Die E-Mail Adresse des Versicherten (Owner des Aktenkontos) wird in einer Datei **EmailOwner.json** abgelegt. 
+[source,json]
+----
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",  
+  "$id": "https://gematik.de/emailowner.json",  
+  "title": "EmailOwner",  
+  "description": "Email address of insurant in an export package",  
+  "type": "string"
+}
+----
+Beispiel: Inhalt EmailOwner.json
 
-Im importierenden Aktensystem können einzelne oder auch alle E-Mail Adressen aus einem Exportpaket schon vorhanden sein. Dieses ist kein 
-Fehler, die entsprechenden Einträge des Exportpakets können dann ignoriert werden. Die Benachrichtigung der Vertreter über den Umzug eines vertretenen Aktenkontos müssen jedoch auch in diesem Fall erfolgen. 
+[source,json]
+----
+    {
+      "firstName.lastNameOfHealthRecordOwner@example.com"
+    }
+----
 
-Die Attribute _identifier_ und _createdAt_ werden nicht exportiert. Diese Attribute werden durch das importierende Aktensystem neu vergeben.
+
+
+Die E-Mail Adressen der zum Zeitpunkt der Erstellung des Exportpakets befugten Vertreter des Versicherten werden in einer JSON-Datei **Emails.json** zusammengefasst. Es werden dabei jedoch ausschließlich die E-Mail Adressen derjenigen Vertreter berücksichtigt, deren Home-Aktensystem mit dem exportierenden Aktensystem identisch ist. E-Mail Adressen von Vertretern, deren Home-Aktensystem ein anderes Aktensystem ist, werden nicht berücksichtgt. 
+
+Eine Vertrtetung liegt vor, wenn eine Befugnis existiert, deren actorid einer KVNR entspricht, aber nicht mit der KVNR des Aktenkontoinhabers übereinstimmt.
+
+Die E-Mail Adressen der Vertreter werden durch das importierende Aktensystem nicht persistiert. Die importierten E-Mails Adressen aus dem Exportpaket zusammen mit den E-Mail Adressen von Vertretern, deren Home-Aktensystem schon dem importierenden Aktensystem entspricht, dienen bei erfolgreichem Import eines Aktenkontos lediglich dem Zweck der Benachrichtigung der Vertreter über den Umzug des vertretenen Aktenkontos.
 
 Schema:
 [source,json]
@@ -518,15 +540,7 @@ Schema:
   "description": "Email addresses of representatives in an export package",  
   "type": "array",
   "items": {
-    "kvnr":{ 
-      "type": "string"
-    },
-    "email": { 
-      "type": "string"
-    },
-    "actor": { 
-      "type": "string"
-    }
+    "type": "string"
   }
 }
 ----
@@ -537,24 +551,16 @@ Beispiel: Inhalt Emails.json mit 4 Einträgen
 ----
 [
     {
-      "kvnr" : "A123456789", 
-      "email": "m.mustermann@gematik.de",
-      "actor": "Betriebskrankenkasse AAA"
+      "m.mustermann@gematik.de"
     },
     {
-      "kvnr" : "B987654321",
-      "email": "max.mustermann@gematik.de",
-      "actor": "Max Mustermann"
+      "max.mustermann@gematik.de"
     },
     {
-      "kvnr" : "C112233445",
-      "email": "max.mustermann123@gematik.de",
-      "actor": "Max Mustermann"
+      "max.mustermann123@gematik.de"
     },
     {
-      "kvnr" : "C112233445",
-      "email": "mustermann.max@ti.de",
-      "actor": "Max Mustermann"
+      "mustermann.max@ti.de"
     }
   ]
 ----
