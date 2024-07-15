@@ -51,12 +51,15 @@ Die einzelnen Artefakte eines Aktenkontos werden in einer einzelnen Zip-Datei mi
 ||Medication/|M_nnnnnn.json { 0 .. * }|FHIR Resourcen| <<Medication>>
 ||AuditEvents/|A_nnnnnn.json { 0 .. * }|Audit Events| <<AuditEvents>>
 ||Entitlements/|E_nnnnnn.json { 0 .. * }|Befugnisse| <<Entitlements>>
-||(root)|Consents.json {1 .. 1}|Widersprüche| <<Consents>>
+||(root)|Consents.json {1 .. 1}|Widersprüche gegen Funktionen der ePA| <<Consents>>
+||(root)|ResearchDataPurposes.json {1 .. 1}|Verwendungszwecke für Forschungsdaten| <<Consents>>
 ||(root)|Constraints.json {1 .. 1}|verborgene Elemente| <<Constraints>>
 ||(root)|EmailOwner.json {1 .. 1}|E-Mail Adresse Versicherter| <<Emails>>
 ||(root)|Emails.json {1 .. 1}|E-Mail Adressen Vertreter| <<Emails>>
 ||(root)|BlockedUsers.json {1 .. 1}|ausgeschloßene Nutzer| <<BlockedUsers>>
 |===
+
+Einzelne Datenelemente des Aktenkontos, beispielsweise ein spezifisches Entitlement, eine konkrete Consent Decision, ein bestimmtes XDS Dokument, sind jeweils nur einmalig gemäß obiger Tabelle in die Zip-Datei aufzunehmen (keine Duplikate).
 
 Die Komprimierung der Zip-Datei erfolgt mit Kompressionsmethode 'no compression' (0) oder 'Deflate' (8) gemäß der Vorgaben in  <<zip>>.
 
@@ -216,7 +219,7 @@ Beispiel: Inhalt A_111111.json (Event: cancel medication dispense)
 
 ---
 ==== Consents
-Alle Entscheidungen zu widerspruchsfähigen Funktionen der ePA werden in einer JSON-Datei **Consents.json** zusammengefasst.
+Alle Entscheidungen zu widerspruchsfähigen Funktionen der ePA werden in einer JSON-Datei **Consents.json** zusammengefasst. 
 
 Der grundsätzliche Widerspruch gegen die Nutzung der ePA ist nicht Bestandteil dieser Datei.
 
@@ -225,7 +228,7 @@ Schema:
 ----
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",  
-  "$id": "https://gematik.de/consents.json",  
+  "$id": "https://gematik.de/schema-consents.json",  
   "title": "Consents",  
   "description": "Consent decision entries",  
   "type": "array",
@@ -234,11 +237,11 @@ Schema:
     "properties": { 
       "functionClass": { 
         "type": "string",
-        "enum": ["healthCareProcess"]
+        "enum": ["healthCareProcess", "research"]
       },
       "function": { 
         "type": "string",
-        "enum": ["medication", "erp-submission"]
+        "enum": ["medication", "erp-submission", "research-submission"]
       },
       "consent": { 
         "type": "string",
@@ -262,11 +265,90 @@ Beispiel: Inhalt Consents.json
 		"functionClass": "healthCareProcess",
 		"function": "erp-submission",
 		"consent": "permit"
+	},
+	{
+		"functionClass": "research",
+		"function": "research-submission",
+		"consent": "permit"
 	}
 ]
 ----
 
----
+Alle Entscheidungen zu den Verwendungszwecken für übermittelte Daten für Forschungszwecke werden in einer JSON-Datei **ResearchDataPuposes.json** zusammengefasst. Diese Datei ist immer vorhanden, auch dann, wenn grundsätzlich gegen die Freigabe von Daten für Forschungszwecke entschieden wurde (siehe Consent "research-subission" == "deny")
+
+Schema:
+[source,json]
+----
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",  
+  "$id": "https://gematik.de/schema-researchDataPurposes.json",
+  "title": "Research Data Purposes",
+  "description": "Consents on research data purposes",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "properties": {
+      "purposeClass": {
+        "type": "string",
+        "enum": ["Purpose1", "Purpose2", "Purpose3", "Purpose4", "Purpose5", "Purpose6", "Purpose7", "Purpose8", "Purpose9", "Purpose10"]
+      },
+      "consent": {
+        "type": "string",
+        "enum": ["permit", "deny"]
+      }
+    }
+  }
+}
+----
+
+Beispiel: Inhalt ResearchDataPurposes.json
+[source,json]
+----
+  [
+    {
+      "purposeClass": "Purpose1",
+      "consent": "permit"
+    },
+    {
+      "purposeClass": "Purpose2",
+      "consent": "permit"
+    },
+    {
+      "purposeClass": "Purpose3",
+      "consent": "deny"
+    },
+    {
+      "purposeClass": "Purpose4",
+      "consent": "permit"
+    },
+    {
+      "purposeClass": "Purpose5",
+      "consent": "permit"
+    },
+    {
+      "purposeClass": "Purpose6",
+      "consent": "permit"
+    },
+    {
+      "purposeClass": "Purpose7",
+      "consent": "permit"
+    },
+    {
+      "purposeClass": "Purpose8",
+      "consent": "permit"
+    },
+    {
+      "purposeClass": "Purpose9",
+      "consent": "permit"
+    },
+    {
+      "purposeClass": "Purpose10",
+      "consent": "permit"
+    }
+  ]
+----
+
+
 ==== Constraints
 Alle Einträge (Assignments) der General Deny Policy werden in einer JSON-Datei **Constraints.json** zusammengefasst.
 
@@ -275,7 +357,7 @@ Schema:
 ----
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",  
-  "$id": "https://gematik.de/constraints.json",  
+  "$id": "https://gematik.de/schema-constraints.json",  
   "title": "Constraints",  
   "description": "Entries of the general deny policy",  
   "type": "array",
@@ -389,7 +471,7 @@ Schema für eine Befugnis:
 ----
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",  
-  "$id": "https://gematik.de/entitlement.json",  
+  "$id": "https://gematik.de/schema-entitlement.json",  
   "title": "Entitlement",  
   "description": "An entitlment in an export package",  
   "type": "object",
@@ -443,7 +525,7 @@ Schema:
 ----
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",  
-  "$id": "https://gematik.de/blockedUsers.json",  
+  "$id": "https://gematik.de/schema-blockedUsers.json",  
   "title": "Blocked users",  
   "description": "Entries of the blocked user policy in an export package",  
   "type": "array",
@@ -507,7 +589,7 @@ Die E-Mail Adresse des Versicherten (Owner des Aktenkontos) wird in einer Datei 
 ----
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",  
-  "$id": "https://gematik.de/emailowner.json",  
+  "$id": "https://gematik.de/schema-emailowner.json",  
   "title": "EmailOwner",  
   "description": "Email address of insurant in an export package",  
   "type": "string"
@@ -535,7 +617,7 @@ Schema:
 ----
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",  
-  "$id": "https://gematik.de/emails.json",  
+  "$id": "https://gematik.de/schema-emails.json",  
   "title": "Emails",  
   "description": "Email addresses of representatives in an export package",  
   "type": "array",
