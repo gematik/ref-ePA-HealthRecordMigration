@@ -1,6 +1,10 @@
 <img align="right" width="250" height="47" src="images/Gematik_Logo_Flag_With_Background.png"/> <br/>    
  
 # Release Notes ref-ePA-HealthRecordMigration
+## Release 3.1.0
+- Health Record Relocation for ePA-3.1
+### changes
+- integrate changes from Release 3.0.0-2 (fixed schema and example for emails section in export package definition)
 ## Release 3.1.0-RC
 - Health Record Relocation for ePA-3.1 and later versions
 ### changes
