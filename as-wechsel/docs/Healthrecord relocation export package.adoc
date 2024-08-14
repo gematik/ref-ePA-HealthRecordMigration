@@ -26,6 +26,14 @@ endif::[]
 
 toc::[]
 
+// versioning introduced first with release 3.1.0 starting with 1.0.0!
+[cols="1,1"]
+|===
+|Version:
+|1.0.0
+|===
+
+
 :sectnums:
 
 [#_exportpackage]
@@ -589,19 +597,22 @@ Die E-Mail Adresse des Versicherten (Owner des Aktenkontos) wird in einer Datei 
 ----
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",  
-  "$id": "https://gematik.de/schema-emailowner.json",  
+  "$id": "https://gematik.de/emailowner.json",  
   "title": "EmailOwner",  
   "description": "Email address of insurant in an export package",  
-  "type": "string"
+  "type": "array",
+  "items": {
+    "type": "string"
+  }
 }
 ----
 Beispiel: Inhalt EmailOwner.json
 
 [source,json]
 ----
-    {
-      "firstName.lastNameOfHealthRecordOwner@example.com"
-    }
+[
+    "firstName.lastNameOfHealthRecordOwner@example.com"
+]
 ----
 
 
@@ -617,7 +628,7 @@ Schema:
 ----
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",  
-  "$id": "https://gematik.de/schema-emails.json",  
+  "$id": "https://gematik.de/emails.json",  
   "title": "Emails",  
   "description": "Email addresses of representatives in an export package",  
   "type": "array",
@@ -632,19 +643,11 @@ Beispiel: Inhalt Emails.json mit 4 Einträgen
 [source,json]
 ----
 [
-    {
-      "m.mustermann@gematik.de"
-    },
-    {
-      "max.mustermann@gematik.de"
-    },
-    {
-      "max.mustermann123@gematik.de"
-    },
-    {
-      "mustermann.max@ti.de"
-    }
-  ]
+  "m.mustermann@gematik.de",
+  "max.mustermann@gematik.de",
+  "max.mustermann123@gematik.de",
+  "mustermann.max@ti.de"
+]
 ----
 
 ---
