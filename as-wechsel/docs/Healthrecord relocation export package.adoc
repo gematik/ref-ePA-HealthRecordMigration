@@ -73,6 +73,10 @@ Die Komprimierung der Zip-Datei erfolgt mit Kompressionsmethode 'no compression'
 
 Die Zip-Datei wird mit Dateinamen 'Data.zip' in das Exportpaket übernommen.
 
+Innerhalb der Zip-Datei darf es kein Interleaving geben. Alle Einträge mit gleichem Pfad müssen aufeinanderfolgen und sollen nicht abwechselnd mit Einträgen eines abweichenden Pfades vorkommen.
+
+Werden Einträge (Ressourcen, Dateien) von weiteren Einträgen referenziert, so sind die referenzierten Einträge in der Reihenfolge vor den referenzierenden Einträgen in die Zip-Datei aufzunehmen. Bei einer sequentiellen Auswertung der Datei werden die referenzierten Einträge dann zuerst gelesen wurden und sind bei der Verarbeitung der referenzierenden Elemente dann schon bekannt.
+
 ---
 ==== IHE_XDS
 Der Export der Daten des XDS Document Service erfolgt analog zum Vorgehen in ePA-2.6. 
@@ -84,6 +88,9 @@ Abweichend von den Vorgaben aus [ITI-32] muss:
 
 * der ursprüngliche Inhalt von DocumentEntry.URI in das Metadatum DocumentEntry.originalURI kopiert werden. DocumentEntry.originalURI wird ausschließlich im Rahmen des Aktenumzugs verwendet (d.h. es ist kein Metadatum von XDS-Registry) und wie die anderen Metadaten auch in METADATA.XML übertragen.
 * für Dokumente ohne DocumentEntry.title dieses Metadatum mit dem auf den reinen Dateinamen reduzierten Wert (d.h. ohne Pfadangaben) von documentEntry.URI befüllt und in METADATA.XML übernommen werden.
+
+===== Reihenfolge und Sortierung der Submission Sets
+Innerhalb der Daten zu IHE_XDS in der Zip-Datei des Exportpakets werden Submission Sets so angeordnet, dass bei sequentiellem Lesen keine 'Dangling Pointer' auftreten, d.h. keine Assoziationen, deren Ziel (Folder oder Document Entry) noch nicht gelesen wurde, sondern erst im weiteren Verlauf der Zip-Datei enthalten ist
 
 ---
 ==== Medication
