@@ -26,11 +26,18 @@ endif::[]
 
 toc::[]
 
-// versioning introduced first with release 3.1.0 starting with 1.0.0!
-[cols="1,1"]
+
+[cols="1,4",options="header"]
 |===
-|Version:
+|Version
+|
+
 |1.0.0
+|erste Version für ePA-Aktensysteme ab Release 3.1.x
+|1.0.1
+|Hinweise zur Reihenfolge der Artefakte im Zip-File
+|1.1.0
+|Ergänzung von Ressourcen in medication sowie deren Reihenfolge
 |===
 
 
@@ -102,6 +109,8 @@ Die jeweils enthaltene FHIR-Resource einer Datei ist innerhalb der JSON Struktur
 
 Die exportierbaren FHIR-Resourcen verwenden teilweise Referenzen auf weitere Resourcen ("reference"). Zur Vermeidung nicht auflösbarer Referenzen bei einem Import des Exportpakets werden die Resourcen in der vorgegebenen Reihenfolge angeordnet, so dass referenzierte Resourcen vor dem Import von Resourcen mit Referenzen schon bekannt sind.
 
+Zusätzlich müssen bei der Migration alle Versionen der FHIR-Instanzen berücksichtigt werden. Dabei ist sicherzustellen, dass die `Resource.id` über alle Versionen hinweg konstant bleibt, während die Attribute `Resource.meta.versionId` und `Resource.meta.lastUpdated` in jede Version korrekt übernommen werden. Es muss gewährleistet sein, dass bei der Migration nur die jeweils aktuellste FHIR-Instanz mit der höchsten Resource.meta.versionId über die Standard-Query-API abrufbar ist. Frühere Versionen der Instanzen dürfen nicht direkt über die Standard-Query-API abgerufen werden, sondern sind über die URL-Struktur `[base]/[resourceType]/[id]/_history/[versionId]` zugänglich. Diese Versionsverwaltung ermöglicht es, auch auf ältere FHIR-Instanzen zurückzugreifen, ohne die Konsistenz der aktuellen Daten zu beeinträchtigen.
+
 Die Resourcenreihenfolge im Exportpaket ergibt sich zu: 
 
 . Organization
@@ -110,6 +119,14 @@ Die Resourcenreihenfolge im Exportpaket ergibt sich zu:
 . Medication
 . MedicationRequest (enthält Referenzen auf Medication und PractitionerRole)
 . MedicationDispense (enthält Referenzen auf Medication und Organization)
+. MedicationStatement (enthält Referenzen auf Medication, Organization, PractitionerRole, Practitioner)
+. Observation (enthält Referenzen auf Organization, PractitionerRole, Practitioner)
+. AllergyIntolerance (enthält Referenzen auf Organization, PractitionerRole, Practitioner)
+. RelatedPerson
+. List (enthält Referenzen auf MedicationStatement, Observation, AllergyIntolerance, Organization, PractitionerRole, Practitioner)
+. Composition (enthält Referenzen auf List, Observation, Organization, PractitionerRole, Practitioner)
+. Provenance (enthält Referenzen auf Medication, MedicationDispense, MedicationRequest, MedicationStatement, Observation, AllergyIntolerance, Organization, PractitionerRole, Practitioner)
+. Task (enthält Referenzen auf MedicationStatement, Organization, PractitionerRole, Practitioner)
 
 Bei einem Import sollen die einzelnen Dateien gemäß der Dateinummerierung, startend bei M_000000.json, verarbeitet werden. D.h.: Alle Nummerierungen der Dateien mit Resourcen des Typs 'Organization' sind kleiner als jede Nummerierung der Dateien mit Resourcen des Typs 'Practitioner' und alle Nummerierungen zu 'Practitioner' sind kleiner als jede Nummerierung zu 'PractitionerRole'. 
 
@@ -120,42 +137,111 @@ Beispiel: Inhalt M_123456.json (Resource: 'Medication')
 [source,json]
 ----
 {
-    "resourceType": "Medication",
-    "id": "example-epa-medication-1",
-    "meta": {
-        "profile":  [
-            "https://gematik.de/fhir/epa-medication/StructureDefinition/epa-medication"
-        ]
-    },
-    "extension":  [
-        {
-            "valueIdentifier": {
-                "system": "https://gematik.de/fhir/epa-medication/sid/rx-prescription-process-identifier",
-                "value": "160.153.303.257.459_20240122"
-            },
-            "url": "https://gematik.de/fhir/epa-medication/StructureDefinition/rx-prescription-process-identifier-extension"
-        }
-    ],
-    "identifier":  [
-        {
-            "system": "https://gematik.de/fhir/epa-medication/sid/epa-medication-unique-identifier",
-            "value": "583DC39E2BFFBFD6C05AE0AC404516309F56729EA44813F9FB881C73EE58EA5D"
-        },
-        {
-            "system": "https://gematik.de/fhir/epa-medication/sid/rx-originator-process-identifier",
-            "value": "6ae6a7ca-c9b5-46bf-9411-2ba49d96f988_160.153.303.257.459"
-        }
-    ],
-    "status": "active",
-    "code": {
-        "coding":  [
-            {
-                "system": "http://fhir.de/CodeSystem/ask",
-                "code": "5682",
-                "display": "Ibuprofen"
-            }
-        ]
+  "resourceType": "Medication",
+  "id": "2cb57b8b-bd90-46da-8a3d-d265e40bc3d1",
+  "meta": {
+    "versionId": "1",
+    "lastUpdated": "2025-08-21T14:40:00.000Z",
+    "profile": [
+      "https://gematik.de/fhir/epa-medication/StructureDefinition/epa-medication"
+    ]
+  },
+  "extension": [
+    {
+      "url": "https://gematik.de/fhir/epa-medication/StructureDefinition/epa-medication-type-extension",
+      "valueCoding": {
+        "code": "781405001",
+        "system": "http://snomed.info/sct",
+        "version": "http://snomed.info/sct/11000274103/version/20240515",
+        "display": "Medicinal product package (product)"
+      }
     }
+  ],
+  "identifier": [
+    {
+      "system": "https://gematik.de/fhir/epa-medication/sid/epa-medication-unique-identifier",
+      "value": "F78C093639F9C1AD216341E77BE87E265B6A04BF4C830E4C010676146D035CA6"
+    }
+  ],
+  "code": {
+    "coding": [
+      {
+        "system": "http://fhir.de/CodeSystem/ifa/pzn",
+        "code": "08545331",
+        "display": "IBU-ratiopharm 800mg akut Schmerztabletten"
+      },
+      {
+        "system": "http://fhir.de/CodeSystem/bfarm/atc",
+        "code": "M01AE01",
+        "display": "Ibuprofen",
+        "version": "2022"
+      }
+    ]
+  },
+  "form": {
+    "coding": [
+      {
+        "system": "https://fhir.kbv.de/CodeSystem/KBV_CS_SFHIR_KBV_DARREICHUNGSFORM",
+        "code": "TAB",
+        "display": "Tabletten",
+        "version": "1.10"
+      },
+      {
+        "system": "http://standardterms.edqm.eu",
+        "code": "12200",
+        "display": "Tablet"
+      },
+      {
+        "system": "http://snomed.info/sct",
+        "code": "385055001",
+        "version": "http://snomed.info/sct/11000274103/version/20240515",
+        "display": "Tablet (basic dose form)"
+      }
+    ]
+  },
+  "status": "active",
+  "amount": {
+    "numerator": {
+      "value": 50,
+      "code": "{Tablet}",
+      "system": "http://unitsofmeasure.org",
+      "unit": "Tablet"
+    },
+    "denominator": {
+      "value": 1,
+      "code": "{Package}",
+      "system": "http://unitsofmeasure.org",
+      "unit": "Package"
+    }
+  },
+  "ingredient": [
+    {
+      "itemCodeableConcept": {
+        "coding": [
+          {
+            "code": "387207008",
+            "system": "http://snomed.info/sct",
+            "version": "http://snomed.info/sct/11000274103/version/20240515",
+            "display": "Ibuprofen (substance)"
+          }
+        ]
+      },
+      "strength": {
+        "numerator": {
+          "value": 400,
+          "code": "mg",
+          "system": "http://unitsofmeasure.org",
+          "unit": "MilliGram"
+        },
+        "denominator": {
+          "value": 1,
+          "code": "{Tablet}",
+          "system": "http://unitsofmeasure.org",
+          "unit": "Tablet"
+        }
+      }
+    }
+  ]
 }
 ----
 

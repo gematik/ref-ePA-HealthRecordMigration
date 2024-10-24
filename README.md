@@ -1,6 +1,6 @@
 <img align="right" width="200" height="37" src="images/Gematik_Logo_Flag_With_Background.png"/> <br/>
   
-# Electronic Health Record System (Health Record Migration)
+# Electronic Health Record System (Health Record Relocation)
 
 
 ---
@@ -8,7 +8,7 @@
 <details>
   <summary>Table of Contents</summary>
   <ol>
-    <li><a href="#about-health-record-migration">About Health Record Migration </a></li>
+    <li><a href="#about-health-record-relocation">About Health Record Relocation </a></li>
     <li><a href="#release-notes">Release Notes</a></li>
     <li><a href="#license">License</a></li>
     <li><a href="#contributions">Contributions</a></li>
@@ -16,16 +16,15 @@
   </ol>
 </details>
 
-## About Health Record Migration
+## About Health Record Relocation
 This repository provides technical information for the Electronic Health Record (ePA) application as part of the Telematic Infrastructure (TI).
 
-Health Record Migration applies when a particular health record shall be moved from one health record system to another ("Relocation"). The process of migration itself involves the ePA-Basic interfaces I_Health_Record_Relocation_Service and I_Information_Service_Accounts.
+Health Record Relocation applies when a particular health record shall be moved from one health record system to another ("Relocation"). The process itself is defined in chapter "Health Record Relocation Service" of specification 'gemSpec_Aktensystem_ePAfuerall" and involves the ePA-Basic interfaces I_Health_Record_Relocation_Service and I_Information_Service_Accounts.
 
-One step of the relocation is the exchange of encrypted health record content, collected in a single Zip-file - the export package. The structure of the export package and its enryption is defined here (see /as-wechsel/docs).
+One step of the relocation is the exchange of encrypted health record content, collected in a single Zip-file - the export package. The structure of the export package and its enryption is defined here: [Package-Exchange encryption](./as-wechsel/Readme.md) and [Export-Package](./docs/Healthrecord%20relocation%20export%20package.adoc).
 
-This branch relates to  **ePA-Basic, context ePA 3.0 ('ePA für alle')** </br>
-(follow link in [Branchinformation.md](./Branchinformation.md)):
-- **ePA-Basic** Basic services related resources</br>
+This branch relates to **ePA version 3.1** (3.1.X)</br>
+See [Branchinformation.md](./Branchinformation.md) for links to specification and further repositories.
 
 
 ## Release Notes
