@@ -55,7 +55,7 @@ Zum Schutz des Export-Pakets ist folgendes Schlüsselmaterial erforderlich:
 
 Der Kostenträger initiert die Erstellung des Exportpakets durch den Aufruf der Operation startPackageCreation der Schnittstelle I_Health_Record_Relocation_Service.
 
-Gemäß [Exportpaket](./docs/Healthrecord%20relocation%20export%20package.adoc) werden die zu übertragenden Inhalte des Aktenkontos in einer einzelnen ZIP-Datei zusammengefasst.
+Gemäß [Exportpaket](../docs/Healthrecord%20relocation%20export%20package.adoc) werden die zu übertragenden Inhalte des Aktenkontos in einer einzelnen ZIP-Datei zusammengefasst.
 
 Für den Schutz der ZIP-Datei sind folgende Schritte durchzuführen:
 
@@ -63,7 +63,7 @@ Für den Schutz der ZIP-Datei sind folgende Schritte durchzuführen:
 
 2. Der Verarbeitungskontext bildet einen 256-Bit-Zufallswert und kodiert diesen
    hexadezimal. Das Ergebnis wird als `export_paket_name` bezeichnet und muss
-   der Dateinamen des Exportpakets sein. Der Rückgabewert von startPackageCreation ist die downloadurl, wobei der Dateiname in dieser URL 
+   der Dateiname des Exportpakets sein. Der Rückgabewert von startPackageCreation ist die downloadurl, wobei der Dateiname in dieser URL 
    `export_paket_name` sein muss. Weiterhin darf der Pfadname in der URL
    keine personenbeziehbaren Daten enthalten.
 
