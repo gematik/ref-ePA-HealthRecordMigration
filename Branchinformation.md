@@ -9,9 +9,9 @@
 | Current status | __released__ |
 | Release date   | __2024-05-06__  |
 | Previous release | [**Release 1.0.1**](https://github.com/gematik/ref-ePA-HealthRecordMigration/tree/1.0.1)|
-| Follow-up | [**Release 3.1**](https://github.com/gematik/ref-ePA-HealthRecordMigration/tree/ePA-3.1) |
+| Follow-up | [**Release 3.0.5**](https://github.com/gematik/ref-ePA-HealthRecordMigration/tree/ePA-3.0.5) |
 | Associated repositories:||
-| Basic Services | [**ePA-Basic (Releases 3.0 to 3.0.X)**](https://github.com/gematik/ePA-Basic/tree/ePA-3.0) |
+| Basic Services | [**ePA-Basic (Releases 3.0 to 3.0.3)**](https://github.com/gematik/ePA-Basic/tree/ePA-3.0) |
 
  
 
