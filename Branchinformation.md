@@ -5,13 +5,13 @@
 |This branch||
 |:----|----|
 | Context| __ePA 3.0 (ePA für alle)__|
-| Designation  | __Release 3.0__  |
+| Designation  | __Release 3.0.5__  |
 | Current status | __released__ |
-| Release date   | __2024-05-06__  |
-| Previous release | [**Release 1.0.1**](https://github.com/gematik/ref-ePA-HealthRecordMigration/tree/1.0.1)|
-| Follow-up | [**Release 3.0.5**](https://github.com/gematik/ref-ePA-HealthRecordMigration/tree/ePA-3.0.5) |
+| Release date   | __2025-02-14__  |
+| Previous release | [**Release 3.0**](https://github.com/gematik/ref-ePA-HealthRecordMigration/tree/ePA-3.0) |
+| Follow-up | not yet defined |
 | Associated repositories:||
-| Basic Services | [**ePA-Basic (Releases 3.0 to 3.0.3)**](https://github.com/gematik/ePA-Basic/tree/ePA-3.0) |
+| Basic Services | [**ePA-Basic (3.0.5)**](https://github.com/gematik/ePA-Basic/tree/ePA-3.0.5) |
 
  
 
