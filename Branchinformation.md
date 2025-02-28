@@ -8,10 +8,8 @@
 | Designation  | __Release 3.0.5__  |
 | Current status | __released__ |
 | Release date   | __2025-02-14__  |
-| Previous release | [**Release 3.0**](https://github.com/gematik/ref-ePA-HealthRecordMigration/tree/ePA-3.0) |
+| Release documents</br> (specification and relevant sources) | [gemSpecPages ePA 3.0.5](https://gemspec.gematik.de/releases/ePA_3_0_5/)|
+| Previous release documents | [gemSpecPages ePA 3.0.3](https://gemspec.gematik.de/releases/ePA_3_0_3/)|
 | Follow-up | not yet defined |
-| Associated repositories:||
-| Basic Services | [**ePA-Basic (3.0.5)**](https://github.com/gematik/ePA-Basic/tree/ePA-3.0.5) |
 
- 
 
