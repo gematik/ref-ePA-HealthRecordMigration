@@ -1,3 +1,5 @@
+= Aktenumzug - Exportpaket
+:title-page:
 ifndef::env-github[]
 ifndef::imagesdir[:imagesdir: ../../images]
 ifndef::plantumlsimages[:plantumlsimages: plantuml]
@@ -23,6 +25,22 @@ endif::[]
 ifdef::env-github[]
 image::Gematik_Logo_Flag.png[gematik,width=20%,float="right"]
 endif::[]
+
+[width="100%",cols="50%,50%", options="header",]
+|===
+|Dokumentversion:
+|1.1.0
+|===
+////
+Versionen:
+1.1.0
+  - Verwendungszwecke Forschungsdaten ergänzt
+1.0.1
+  - 'insurantid' zu 'insurantId' in entitlements jwt geändert
+  - Hinweis zu Befugnis EU-Zugriff (NCPeH) ergänzt 
+(1.0.0) 
+  - epA-release 3.0.5 (2025-02-28)
+////
 
 toc::[]
 
@@ -50,7 +68,7 @@ Definition der Formate für die bei einem Anbieterwechsel in einem Exportpaket z
 
 === Zip-Datei
 
-Die einzelnen Artefakte eines Aktenkontos werden in einer einzelnen Zip-Datei mit folgender Struktur abgelegt: 
+Die einzelnen Artefakte eines Aktenkontos werden in einer einzelnen Zip-Datei mit folgender Struktur abgelegt:
 
 [cols="1,1,2a,2a,1"]
 |===
@@ -62,6 +80,7 @@ Die einzelnen Artefakte eines Aktenkontos werden in einer einzelnen Zip-Datei mi
 
 |ZIP/ ||||
 
+||(root)|Information.json {1 .. 1}|allgemeine Information| <<Information>>
 ||IHE_XDS/|gemäß <<ITI-TF2>>, ITI-32|XDS Dokumente| <<IHE_XDS>>
 ||Medication/|M_nnnnnn.json { 0 .. * }|FHIR Resourcen| <<Medication>>
 ||AuditEvents/|A_nnnnnn.json { 0 .. * }|Audit Events| <<AuditEvents>>
@@ -85,9 +104,57 @@ Innerhalb der Zip-Datei darf es kein Interleaving geben. Alle Einträge mit glei
 Werden Einträge (Ressourcen, Dateien) von weiteren Einträgen referenziert, so sind die referenzierten Einträge in der Reihenfolge vor den referenzierenden Einträgen in die Zip-Datei aufzunehmen. Bei einer sequentiellen Auswertung der Datei werden die referenzierten Einträge dann zuerst gelesen wurden und sind bei der Verarbeitung der referenzierenden Elemente dann schon bekannt.
 
 ---
+==== Information
+
+Die Information Sektion enthält allgemeine Angaben zum Exportpaket.
+
+**previousHealthCareInsurance** +
+Zu Informations- und Protokollierungszwecken wird dem importierenden Aktensystem die Kennung des bisherigen Kostenträgers übermittelt.
+
+Schema:
+[source,json]
+----
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gematik.de/schema-information.json",
+  "title": "Information",
+  "description": "General information",
+  "type": "object",
+  "properties": {
+    "previousHealthCareInsurance": {
+      "type": "object",
+      "properties": {
+        // Name des Kostenträgers
+        "name": {
+          "type": "string"
+        },
+        // IK-Nummer (optional)
+        "identifierInstitution": {
+          "type": "string"
+        }
+      },
+      "required": ["name"]
+    }
+  },
+  "required": ["previousHealthCareInsurance"]
+}
+----
+
+
+Beispiel: Inhalt Information.json
+[source,json]
+----
+{
+    "previousHealthCareInsurance": {
+        "name": "Test GKV",
+        "identifierInstitution": "109500969"
+    }
+}
+----
+
 ==== IHE_XDS
-Der Export der Daten des XDS Document Service erfolgt analog zum Vorgehen in ePA-2.6. 
-Policy Documents sind nicht mehr vorhanden und werden daher nicht berücksichtigt. Audit Events werden gemäß der Vorgaben in <<AuditEvents>> in das Exportpaket aufgenommen. 
+Der Export der Daten des XDS Document Service erfolgt analog zum Vorgehen in ePA-2.6.
+Policy Documents sind nicht mehr vorhanden und werden daher nicht berücksichtigt. Audit Events werden gemäß der Vorgaben in <<AuditEvents>> in das Exportpaket aufgenommen.
 
 Im Ordner IHE_XDS werden alle Dokumente und alle Metadaten gemäß IHE ITI Cross-Enterprise Document Media Interchange (XDM) - Distribute Document Set on Media [ITI-32] für den Export abgelegt (<<ITI-TF2>>).
 
@@ -128,7 +195,7 @@ Die Resourcenreihenfolge im Exportpaket ergibt sich zu:
 . Provenance (enthält Referenzen auf Medication, MedicationDispense, MedicationRequest, MedicationStatement, Observation, AllergyIntolerance, Organization, PractitionerRole, Practitioner)
 . Task (enthält Referenzen auf MedicationStatement, Organization, PractitionerRole, Practitioner)
 
-Bei einem Import sollen die einzelnen Dateien gemäß der Dateinummerierung, startend bei M_000000.json, verarbeitet werden. D.h.: Alle Nummerierungen der Dateien mit Resourcen des Typs 'Organization' sind kleiner als jede Nummerierung der Dateien mit Resourcen des Typs 'Practitioner' und alle Nummerierungen zu 'Practitioner' sind kleiner als jede Nummerierung zu 'PractitionerRole'. 
+Bei einem Import sollen die einzelnen Dateien gemäß der Dateinummerierung, startend bei M_000000.json, verarbeitet werden. D.h.: Alle Nummerierungen der Dateien mit Resourcen des Typs 'Organization' sind kleiner als jede Nummerierung der Dateien mit Resourcen des Typs 'Practitioner' und alle Nummerierungen zu 'Practitioner' sind kleiner als jede Nummerierung zu 'PractitionerRole'.
 
 Schema: https://simplifier.net/epa-medication
 
@@ -335,16 +402,16 @@ Schema:
   "type": "array",
   "items": {
     "type": "object",
-    "properties": { 
-      "functionClass": { 
+    "properties": {
+      "functionClass": {
         "type": "string",
         "enum": ["healthCareProcess", "research"]
       },
-      "function": { 
+      "function": {
         "type": "string",
         "enum": ["medication", "erp-submission", "research-submission"]
       },
-      "consent": { 
+      "consent": {
         "type": "string",
         "enum": ["permit", "deny"]
       }
@@ -475,7 +542,7 @@ Schema:
               "type": "string",
               "enum": ["document"]
             },
-            "rootDocumentId": { 
+            "rootDocumentId": {
               "type": "string"
             }
           }
@@ -491,7 +558,7 @@ Schema:
               "type": "string",
               "enum": ["folder"]
             },
-            "folderUUID": { 
+            "folderUUID": {
               "type": "string"
             }
           }
@@ -507,7 +574,7 @@ Schema:
               "type": "string",
               "enum": ["category"]
             },
-            "categoryId": { 
+            "categoryId": {
               "type": "string"
             }
           }
@@ -545,53 +612,55 @@ Innerhalb dieses Verzeichnisses werden alle Daten des Entitlement Managements ab
 
 Jedes Entitlement wird dabei als jeweils eine Datei abgelegt. Der Dateiname ist E_nnnnnn.json mit 'nnnnnn' aus der Menge {000000, 999999}, beginnend mit 'nnnnnn' = 000000 und fortlaufender Zählung.
 
-Entitlements werden nicht direkt aus dem Aktenkonto in die Zip-Datei des Exportpakets übernommen. Die sicherheitsrelevanten Attribute, KVNR des Aktenkontos, actorId des befugten Nutzers (KVNR oder Telematik-Id) sowie das Ende der Gültigkeit der Befugnis (validTo), werden in einem JWT zusammengefasst (gemäß gemSpec_Aktensystem_ePAfueralle, A_25719*) und mit der Identität des Aktensystems (ID.FD.SIG) signiert. 
-Bei einem Import im empfangenden Aktensystem muss dieses JWT mittels HSM Regel 'rr5' prüfbar sein. 
+Entitlements werden nicht direkt aus dem Aktenkonto in die Zip-Datei des Exportpakets übernommen. Die sicherheitsrelevanten Attribute, KVNR des Aktenkontos, actorId des befugten Nutzers (KVNR oder Telematik-Id) sowie das Ende der Gültigkeit der Befugnis (validTo), werden in einem JWT zusammengefasst (gemäß gemSpec_Aktensystem_ePAfueralle, A_25719*) und mit der Identität des Aktensystems (ID.FD.SIG) signiert.
+Bei einem Import im empfangenden Aktensystem muss dieses JWT mittels HSM Regel 'rr5' prüfbar sein.
 
 Die Elemente oid, displayName, issued-at, issued-actorId und issued-displayName werden unverändert übernommen und sind nicht Bestandteil des JWT.
 
-Bei einem Import wird das JWT durch HSM Regel 'rr5' in eine CMAC gesicherte Befugnis konvertiert und mit den weiteren Daten (oid, displayName, ...) im neuen Aktenkonto abgelegt. 
+Bei einem Import wird das JWT durch HSM Regel 'rr5' in eine CMAC gesicherte Befugnis konvertiert und mit den weiteren Daten (oid, displayName, ...) im neuen Aktenkonto abgelegt.
 
   Inhalt des JWT:
     - protected_header:
       - "typ": "JWT"
-      - "alg": "ES256" 
+      - "alg": "ES256"
       - "x5c": signature certificate C.FD.SIG
     - payload:
       - "iat": issued at timestamp
       - "exp": expiry timestamp (always iat + 8 days)
-      - "insurantid": the health record identifier this entitlement is assoctiated to
+      - "insurantId": the health record identifier this entitlement is assoctiated to
       - "actorId": Telematik-Id or KVNR
       - "validTo": Expiry date-time of entitlement in format according to rfc3339
-    - signature: 
+    - signature:
       - contains token signature
 
+===== Hinweis zu Entitlements für den EU Zugriff
+Befugnisse für einen Zugriff aus dem EU-Ausland, also Befugnisse, welche für einen Nutzer mit der Rolle oid_ncpeh ausgestellt wurden, sind kurzlebige Befugnisse mit einer Gültigkeitsdauer von einer Stunde. Diese werden bei einem Aktenumzug nicht berücksichtigt und nicht in das Exportpaket aufgenommen.
 
 Schema für eine Befugnis:
 [source,json]
 ----
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",  
-  "$id": "https://gematik.de/schema-entitlement.json",  
-  "title": "Entitlement",  
-  "description": "An entitlment in an export package",  
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gematik.de/entitlement.json",
+  "title": "Entitlement",
+  "description": "An entitlement in an export package",
   "type": "object",
   "properties": {
-    "entitlement":{ 
+    "entitlement":{
       "description": "jwt containing the security relevant data",
       "type": "string"
     },
-    "oid": { 
+    "oid": {
       "type": "string"
     },
-    "displayName": { 
+    "displayName": {
       "type": "string"
     },
-    "issued-at":{ 
+    "issued-at":{
       "type": "string",
       "format": "date-time"
     },
-    "issued-actorId": { 
+    "issued-actorId": {
       "type": "string"
     },
     "issued-displayName": {
@@ -618,31 +687,31 @@ Beispiel: Inhalt E_000001.json
 
 ---
 ==== BlockedUsers
-Alle Einträge (Assignments) der Blocked User Policy werden in einer JSON-Datei **BlockedUsers.json** zusammengefasst. Dabei wird auch 
+Alle Einträge (Assignments) der Blocked User Policy werden in einer JSON-Datei **BlockedUsers.json** zusammengefasst. Dabei wird auch
 der Zeitpunkt der Erstellung des Eintrags exportiert und unverändert in das importierende System übertragen. Das importierende System darf keine eigenen Zeitstempel (Zeitpunkt des Imports) für die Einträge verwenden.
 
 Schema:
 [source,json]
 ----
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",  
-  "$id": "https://gematik.de/schema-blockedUsers.json",  
-  "title": "Blocked users",  
-  "description": "Entries of the blocked user policy in an export package",  
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gematik.de/blockedUsers.json",
+  "title": "Blocked users",
+  "description": "Entries of the blocked user policy in an export package",
   "type": "array",
   "items": {
     "type": "object",
     "properties": {
-      "actorId":{ 
+      "actorId":{
         "type": "string"
       },
-      "oid": { 
+      "oid": {
         "type": "string"
       },
-      "displayName": { 
+      "displayName": {
         "type": "string"
       },
-      "at":{ 
+      "at":{
         "type": "string",
         "format": "date-time"
       }
@@ -685,14 +754,14 @@ Beispiel: Inhalt BlockedUsers.json mit 4 Einträgen
 
 ---
 ==== Emails
-Die E-Mail Adresse des Versicherten (Owner des Aktenkontos) wird in einer Datei **EmailOwner.json** abgelegt. 
+Die E-Mail Adresse des Versicherten (Owner des Aktenkontos) wird in einer Datei **EmailOwner.json** abgelegt.
 [source,json]
 ----
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",  
-  "$id": "https://gematik.de/emailowner.json",  
-  "title": "EmailOwner",  
-  "description": "Email address of insurant in an export package",  
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gematik.de/emailowner.json",
+  "title": "EmailOwner",
+  "description": "Email address of insurant in an export package",
   "type": "array",
   "items": {
     "type": "string"
@@ -710,7 +779,7 @@ Beispiel: Inhalt EmailOwner.json
 
 
 
-Die E-Mail Adressen der zum Zeitpunkt der Erstellung des Exportpakets befugten Vertreter des Versicherten werden in einer JSON-Datei **Emails.json** zusammengefasst. Es werden dabei jedoch ausschließlich die E-Mail Adressen derjenigen Vertreter berücksichtigt, deren Home-Aktensystem mit dem exportierenden Aktensystem identisch ist. E-Mail Adressen von Vertretern, deren Home-Aktensystem ein anderes Aktensystem ist, werden nicht berücksichtgt. 
+Die E-Mail Adressen der zum Zeitpunkt der Erstellung des Exportpakets befugten Vertreter des Versicherten werden in einer JSON-Datei **Emails.json** zusammengefasst. Es werden dabei jedoch ausschließlich die E-Mail Adressen derjenigen Vertreter berücksichtigt, deren Home-Aktensystem mit dem exportierenden Aktensystem identisch ist. E-Mail Adressen von Vertretern, deren Home-Aktensystem ein anderes Aktensystem ist, werden nicht berücksichtgt.
 
 Eine Vertrtetung liegt vor, wenn eine Befugnis existiert, deren actorid einer KVNR entspricht, aber nicht mit der KVNR des Aktenkontoinhabers übereinstimmt.
 
@@ -720,10 +789,10 @@ Schema:
 [source,json]
 ----
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",  
-  "$id": "https://gematik.de/emails.json",  
-  "title": "Emails",  
-  "description": "Email addresses of representatives in an export package",  
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gematik.de/emails.json",
+  "title": "Emails",
+  "description": "Email addresses of representatives in an export package",
   "type": "array",
   "items": {
     "type": "string"
@@ -748,7 +817,7 @@ Beispiel: Inhalt Emails.json mit 4 Einträgen
 === Verweise
 
 * [[[zip]]] PKWARE APPNOTE.TXT - .ZIP File Format Specification.
-Version: 6.3.10 
+Version: 6.3.10
 Revised: Nov 01, 2022
 Copyright (c) 1989 - 2014, 2018, 2019, 2020, 2022 PKWARE Inc., All Rights Reserved.
 https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT^
