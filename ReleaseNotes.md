@@ -1,6 +1,15 @@
 <img align="right" width="250" height="47" src="images/Gematik_Logo_Flag_With_Background.png"/> <br/>    
  
 # Release Notes ref-ePA-HealthRecordMigration
+## Release 3.1.0-3
+### changes
+- integrate changes from Release 3.0.5-2, 3.0.5-1 and 3.0.0-3
+    - handling for NCPeH entitlements explained (C_12218)
+    - correction of type in insurantId of entitlement jwt (C_12216)
+    - added insurance name to export package (C_12030)
+    - removed ePA-2.X remains
+    - update package requirements
+    - fixed schema and example in E-Mails section in export package definition.
 ## Release 3.1.0-2
 ### changes
 -  Added the changes for the ePA 3.1 Medication Service FHIR instances  
@@ -11,7 +20,7 @@
 ## Release 3.1.0
 - Health Record Relocation for ePA-3.1
 ### changes
-- integrate changes from Release 3.0.0-2 (
+- integrate changes from Release 3.0.0-2 
     - fixed schema and example for emails section in export package definition
 ## Release 3.1.0-RC
 - Health Record Relocation for ePA-3.1 and later versions
