@@ -1,3 +1,5 @@
+= Aktenumzug - Exportpaket
+:title-page:
 ifndef::env-github[]
 ifndef::imagesdir[:imagesdir: ../../images]
 ifndef::plantumlsimages[:plantumlsimages: plantuml]
@@ -23,6 +25,20 @@ endif::[]
 ifdef::env-github[]
 image::Gematik_Logo_Flag.png[gematik,width=20%,float="right"]
 endif::[]
+
+[width="100%",cols="50%,50%", options="header",]
+|===
+|Dokumentversion:
+|1.0.1
+|===
+////
+Versionen:
+1.0.1
+  - 'insurantid' zu 'insurantId' in entitlements jwt geändert
+  - Hinweis zu Befugnis EU-Zugriff (NCPeH) ergänzt 
+(1.0.0) 
+  - epA-release 3.0.5 (2025-02-28)
+////
 
 toc::[]
 
@@ -70,7 +86,7 @@ Werden Einträge (Ressourcen, Dateien) von weiteren Einträgen referenziert, so 
 ---
 ==== Information
 
-Die information Sektion enthält allgemeine Angaben zum Exportpaket.
+Die Information Sektion enthält allgemeine Angaben zum Exportpaket.
 
 **previousHealthCareInsurance** +
 Zu Informations- und Protokollierungszwecken wird dem importierenden Aktensystem die Kennung des bisherigen Kostenträgers übermittelt.
@@ -433,12 +449,14 @@ Bei einem Import wird das JWT durch HSM Regel 'rr5' in eine CMAC gesicherte Befu
     - payload:
       - "iat": issued at timestamp
       - "exp": expiry timestamp (always iat + 8 days)
-      - "insurantid": the health record identifier this entitlement is assoctiated to
+      - "insurantId": the health record identifier this entitlement is assoctiated to
       - "actorId": Telematik-Id or KVNR
       - "validTo": Expiry date-time of entitlement in format according to rfc3339
     - signature:
       - contains token signature
 
+===== Hinweis zu Entitlements für den EU Zugriff
+Befugnisse für einen Zugriff aus dem EU-Ausland, also Befugnisse, welche für einen Nutzer mit der Rolle oid_ncpeh ausgestellt wurden, sind kurzlebige Befugnisse mit einer Gültigkeitsdauer von einer Stunde. Diese werden bei einem Aktenumzug nicht berücksichtigt und nicht in das Exportpaket aufgenommen.
 
 Schema für eine Befugnis:
 [source,json]
@@ -447,7 +465,7 @@ Schema für eine Befugnis:
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://gematik.de/entitlement.json",
   "title": "Entitlement",
-  "description": "An entitlment in an export package",
+  "description": "An entitlement in an export package",
   "type": "object",
   "properties": {
     "entitlement":{

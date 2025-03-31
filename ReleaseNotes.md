@@ -1,6 +1,13 @@
 <img align="right" width="250" height="47" src="images/Gematik_Logo_Flag_With_Background.png"/> <br/>    
  
 # Release Notes ref-ePA-HealthRecordMigration
+## Release 3.0.5-2
+### changes
+- handling for NCPeH entitlements explained (C_12218)
+- correction of type in insurantId of entitlement jwt (C_12216)
+## Release 3.0.5-1
+### changes
+- link updated
 ## Release 3.0.5
 ### changes
 - added insurance name to export package (C_12030)
