@@ -1,6 +1,9 @@
 <img align="right" width="250" height="47" src="images/Gematik_Logo_Flag_With_Background.png"/> <br/>    
  
 # Release Notes ref-ePA-HealthRecordMigration
+## Release 3.0.5-3
+### changes
+- added User-speciic Deny Policy Medication Service content (C_12333)
 ## Release 3.0.5-2
 ### changes
 - handling for NCPeH entitlements explained (C_12218)
