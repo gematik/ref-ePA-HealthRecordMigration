@@ -1,6 +1,12 @@
 <img align="right" width="250" height="47" src="images/Gematik_Logo_Flag_With_Background.png"/> <br/>    
  
 # Release Notes ref-ePA-HealthRecordMigration
+## Release 3.1.0-4
+### changes
+- editorial correction ('secondaryDataUsage', 'data-submission') in export package definition (C_12322)
+- add isPrivateInsurance to indicate if GKV or PKV (C_12328)
+- integrate changes from Release 3.0.5-3
+    - added User-specific Deny Policy Medication Service content (C_12333)
 ## Release 3.1.0-3
 ### changes
 - integrate changes from Release 3.0.5-2, 3.0.5-1 and 3.0.0-3

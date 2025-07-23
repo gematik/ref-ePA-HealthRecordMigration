@@ -29,18 +29,9 @@ endif::[]
 [width="100%",cols="50%,50%", options="header",]
 |===
 |Dokumentversion:
-|1.1.0
+|1.1.1
 |===
-////
-Versionen:
-1.1.0
-  - Verwendungszwecke Forschungsdaten ergänzt
-1.0.1
-  - 'insurantid' zu 'insurantId' in entitlements jwt geändert
-  - Hinweis zu Befugnis EU-Zugriff (NCPeH) ergänzt 
-(1.0.0) 
-  - epA-release 3.0.5 (2025-02-28)
-////
+
 
 toc::[]
 
@@ -51,11 +42,15 @@ toc::[]
 |
 
 |1.0.0
-|erste Version für ePA-Aktensysteme ab Release 3.1.x
+|erste Version für ePA-Aktensysteme ab Release 3.x
 |1.0.1
 |Hinweise zur Reihenfolge der Artefakte im Zip-File
+|1.0.2
+|Ergänzung Schema für UdpMedication
 |1.1.0
 |Ergänzung von Ressourcen in medication sowie deren Reihenfolge
+|1.1.1
+|Editorische Korrekturen 
 |===
 
 
@@ -86,7 +81,8 @@ Die einzelnen Artefakte eines Aktenkontos werden in einer einzelnen Zip-Datei mi
 ||AuditEvents/|A_nnnnnn.json { 0 .. * }|Audit Events| <<AuditEvents>>
 ||Entitlements/|E_nnnnnn.json { 0 .. * }|Befugnisse| <<Entitlements>>
 ||(root)|Consents.json {1 .. 1}|Widersprüche gegen Funktionen der ePA| <<Consents>>
-||(root)|ResearchDataPurposes.json {1 .. 1}|Verwendungszwecke für Forschungsdaten| <<Consents>>
+||(root)|UdpMedication.json {1 .. 1}|LEI-spezifische Ausschlüsse von der Nutzung des Medication Service| <<User-specific Deny Policy>>
+||(root)|ResearchDataPurposes.json {1 .. 1}|Verwendungszwecke für Forschungsdaten| <<DataUsagePurposes>>
 ||(root)|Constraints.json {1 .. 1}|verborgene Elemente| <<Constraints>>
 ||(root)|EmailOwner.json {1 .. 1}|E-Mail Adresse Versicherter| <<Emails>>
 ||(root)|Emails.json {1 .. 1}|E-Mail Adressen Vertreter| <<Emails>>
@@ -131,6 +127,10 @@ Schema:
         // IK-Nummer (optional)
         "identifierInstitution": {
           "type": "string"
+        },
+        // private Kasse "true", gesetzliche Kasse "false"        
+        "isPrivateInsurance": {
+          "type": "boolean"
         }
       },
       "required": ["name"]
@@ -405,11 +405,11 @@ Schema:
     "properties": {
       "functionClass": {
         "type": "string",
-        "enum": ["healthCareProcess", "research"]
+        "enum": ["healthCareProcess", "secondaryDataUsage"]
       },
       "function": {
         "type": "string",
-        "enum": ["medication", "erp-submission", "research-submission"]
+        "enum": ["medication", "erp-submission", "data-submission"]
       },
       "consent": {
         "type": "string",
@@ -435,14 +435,79 @@ Beispiel: Inhalt Consents.json
 		"consent": "permit"
 	},
 	{
-		"functionClass": "research",
-		"function": "research-submission",
+		"functionClass": "secondaryDataUsage",
+		"function": "data-submission",
 		"consent": "permit"
 	}
 ]
 ----
 
-Alle Entscheidungen zu den Verwendungszwecken für übermittelte Daten für Forschungszwecke werden in einer JSON-Datei **ResearchDataPuposes.json** zusammengefasst. Diese Datei ist immer vorhanden, auch dann, wenn grundsätzlich gegen die Freigabe von Daten für Forschungszwecke entschieden wurde (siehe Consent "research-subission" == "deny")
+---
+==== User-specific Deny Policy 
+Alle Einträge zum Ausschluss von Leistungserbringerinstitutionen von der Nutzung des Medication Service (User-specific Deny Policy Medication Service) der ePA werden in einer JSON-Datei **UdpMedication.json** zusammengefasst. 
+
+Schema:
+[source,json]
+----
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://gematik.de/schema-udp-medication.json",
+    "title": "UdpMedication",
+    "description": "User-specific deny policy medication service assignments",
+    "type": "array",
+    "items": {
+      "type": "object",
+      "properties": {
+        "actorId": {
+          "type": "string",
+          "description": "Telematik-id of denied institution"
+        },
+        "oid": {
+          "type": "string",
+          "description": "oid of denied institution"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "display name of denied institution"
+        },
+        "at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "timestamp of assignment creation"
+        }
+      }
+    }
+  }
+----
+
+Beispiel: Inhalt UdpMedication.json
+[source,json]
+----
+[
+	{
+		"actorId": "2-883110000092414",
+		"oid": "1.2.276.0.76.4.51",
+		"displayName": "Zahnarztpraxis Norbert Freiherr Schomaker",
+		"at": "2025-07-01T12:00:00Z"
+	},
+	{
+		"actorId": "1-883110000092404",
+		"oid": "1.2.276.0.76.4.50",
+		"displayName": "Praxis Dr. Annamaria Heckhausén",
+		"at": "2025-07-02T12:00:00Z"
+	},
+	{
+		"actorId": "2-88311000009242",
+		"oid": "1.2.276.0.76.4.51",
+		"displayName": "Zahnarztpraxis Dr. Alfons Adamiç",
+		"at": "2025-07-03T12:00:00Z"
+	}
+]
+----
+
+---
+==== DataUsagePurposes
+Alle Entscheidungen zu den Verwendungszwecken für übermittelte Daten für Forschungszwecke werden in einer JSON-Datei **ResearchDataPuposes.json** zusammengefasst. Diese Datei ist immer vorhanden, auch dann, wenn grundsätzlich gegen die Freigabe von Daten für Forschungszwecke entschieden wurde (siehe Consent "data-subission" == "deny")
 
 Schema:
 [source,json]
