@@ -29,7 +29,7 @@ endif::[]
 [width="100%",cols="50%,50%", options="header",]
 |===
 |Dokumentversion:
-|1.1.1
+|1.1.2
 |===
 
 
@@ -51,6 +51,8 @@ toc::[]
 |Ergänzung von Ressourcen in medication sowie deren Reihenfolge
 |1.1.1
 |Editorische Korrekturen 
+|1.1.2
+|Zulässigkeit verlinkter Anhänge in XDS-Dokumnenetn und editorische Anpassungen 
 |===
 
 
@@ -97,7 +99,7 @@ Die Zip-Datei wird mit Dateinamen 'Data.zip' in das Exportpaket übernommen.
 
 Innerhalb der Zip-Datei darf es kein Interleaving geben. Alle Einträge mit gleichem Pfad müssen aufeinanderfolgen und sollen nicht abwechselnd mit Einträgen eines abweichenden Pfades vorkommen.
 
-Werden Einträge (Ressourcen, Dateien) von weiteren Einträgen referenziert, so sind die referenzierten Einträge in der Reihenfolge vor den referenzierenden Einträgen in die Zip-Datei aufzunehmen. Bei einer sequentiellen Auswertung der Datei werden die referenzierten Einträge dann zuerst gelesen wurden und sind bei der Verarbeitung der referenzierenden Elemente dann schon bekannt.
+Werden Einträge (Ressourcen, Dateien) von weiteren Einträgen referenziert, so sind die referenzierten Einträge in der Reihenfolge vor den referenzierenden Einträgen in die Zip-Datei aufzunehmen. Bei einer sequentiellen Auswertung der Datei werden die referenzierten Einträge dann zuerst gelesen wurden und sind bei der Verarbeitung der referenzierenden Elemente dann schon bekannt. Eine Ausnahme stellen hierbei Verlinkungen zwischen Anhängen bei XDS-Dokumenten dar.
 
 ---
 ==== Information
@@ -187,17 +189,9 @@ Die Resourcenreihenfolge im Exportpaket ergibt sich zu:
 . MedicationRequest (enthält Referenzen auf Medication und PractitionerRole)
 . MedicationDispense (enthält Referenzen auf Medication und Organization)
 . MedicationStatement (enthält Referenzen auf Medication, Organization, PractitionerRole, Practitioner)
-. Observation (enthält Referenzen auf Organization, PractitionerRole, Practitioner)
-. AllergyIntolerance (enthält Referenzen auf Organization, PractitionerRole, Practitioner)
-. RelatedPerson
-. List (enthält Referenzen auf MedicationStatement, Observation, AllergyIntolerance, Organization, PractitionerRole, Practitioner)
-. Composition (enthält Referenzen auf List, Observation, Organization, PractitionerRole, Practitioner)
-. Provenance (enthält Referenzen auf Medication, MedicationDispense, MedicationRequest, MedicationStatement, Observation, AllergyIntolerance, Organization, PractitionerRole, Practitioner)
-. Task (enthält Referenzen auf MedicationStatement, Organization, PractitionerRole, Practitioner)
+. Provenance (enthält Referenzen auf MedicationRequest, MedicationStatement, Organization, PractitionerRole, Practitioner)
 
 Bei einem Import sollen die einzelnen Dateien gemäß der Dateinummerierung, startend bei M_000000.json, verarbeitet werden. D.h.: Alle Nummerierungen der Dateien mit Resourcen des Typs 'Organization' sind kleiner als jede Nummerierung der Dateien mit Resourcen des Typs 'Practitioner' und alle Nummerierungen zu 'Practitioner' sind kleiner als jede Nummerierung zu 'PractitionerRole'.
-
-Schema: https://simplifier.net/epa-medication
 
 Beispiel: Inhalt M_123456.json (Resource: 'Medication')
 

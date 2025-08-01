@@ -1,6 +1,10 @@
 <img align="right" width="250" height="47" src="images/Gematik_Logo_Flag_With_Background.png"/> <br/>    
  
 # Release Notes ref-ePA-HealthRecordMigration
+## Release 3.1.0-5
+### changes
+- clarify document link restrictions for attached xds documents
+- editorial update regarding fhir resources used in export file 
 ## Release 3.1.0-4
 ### changes
 - editorial correction ('secondaryDataUsage', 'data-submission') in export package definition (C_12322)
