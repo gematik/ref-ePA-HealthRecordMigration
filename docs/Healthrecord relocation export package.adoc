@@ -129,10 +129,6 @@ Schema:
         // IK-Nummer (optional)
         "identifierInstitution": {
           "type": "string"
-        },
-        // private Kasse "true", gesetzliche Kasse "false"        
-        "isPrivateInsurance": {
-          "type": "boolean"
         }
       },
       "required": ["name"]
@@ -313,8 +309,6 @@ Innerhalb dieses Verzeichnisses werden alle Daten des Audit Event Services abgel
 Berücksichtigt werden dabei nur Audit Event FHIR-Resourcen und keinerlei gerenderte Auszüge (PDFs).
 
 Jede FHIR-Resource des Typs "AuditEvent" (Profil: epa-auditevent) wird dabei im Format JSON als jeweils eine Datei abgelegt. Der Dateiname ist A_nnnnnn.json mit 'nnnnnn' aus der Menge {000000, 999999}, beginnend mit 'nnnnnn' = 000000 und fortlaufender Zählung.
-
-Schema: https://simplifier.net/epa/epaauditevent
 
 Beispiel: Inhalt A_111111.json (Event: cancel medication dispense)
 
@@ -879,7 +873,7 @@ Beispiel: Inhalt Emails.json mit 4 Einträgen
 Version: 6.3.10
 Revised: Nov 01, 2022
 Copyright (c) 1989 - 2014, 2018, 2019, 2020, 2022 PKWARE Inc., All Rights Reserved.
-https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT^
+https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT
 
 * [[[ITI-TF2]]] IHE IT Infrastructure (ITI) Technical Framework, Volume 2.
 Revision 20.0
