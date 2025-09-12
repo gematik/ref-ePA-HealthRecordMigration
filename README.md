@@ -33,7 +33,7 @@ See [ReleaseNotes.md](./ReleaseNotes.md) for all information regarding the relea
 
 ## License
  
-Copyright 2024 gematik GmbH
+Copyright 2025 gematik GmbH
  
 Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
  
