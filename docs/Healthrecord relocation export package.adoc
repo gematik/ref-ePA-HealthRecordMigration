@@ -29,7 +29,7 @@ endif::[]
 [width="100%",cols="50%,50%", options="header",]
 |===
 |Dokumentversion:
-|1.1.2
+|1.1.3
 |===
 
 
@@ -52,7 +52,9 @@ toc::[]
 |1.1.1
 |Editorische Korrekturen 
 |1.1.2
-|Zulässigkeit verlinkter Anhänge in XDS-Dokumnenetn und editorische Anpassungen 
+|Zulässigkeit verlinkter Anhänge in XDS-Dokumenten und editorische Anpassungen 
+|1.1.3
+|Ergänzung der Patient Ressourcen und History-Bundles für versionierte Ressourcen
 |===
 
 
@@ -79,8 +81,9 @@ Die einzelnen Artefakte eines Aktenkontos werden in einer einzelnen Zip-Datei mi
 
 ||(root)|Information.json {1 .. 1}|allgemeine Information| <<Information>>
 ||IHE_XDS/|gemäß <<ITI-TF2>>, ITI-32|XDS Dokumente| <<IHE_XDS>>
-||Medication/|M_nnnnnn.json { 0 .. * }|FHIR Resourcen| <<Medication>>
+||Medication/|M_nnnnnn.json { 0 .. * }|FHIR Ressourcen| <<Medication>>
 ||AuditEvents/|A_nnnnnn.json { 0 .. * }|Audit Events| <<AuditEvents>>
+||Patient/|P_nnnnnn.json { 0 .. * }|FHIR Ressourcen Patient Service| <<Patient>>
 ||Entitlements/|E_nnnnnn.json { 0 .. * }|Befugnisse| <<Entitlements>>
 ||(root)|Consents.json {1 .. 1}|Widersprüche gegen Funktionen der ePA| <<Consents>>
 ||(root)|UdpMedication.json {1 .. 1}|LEI-spezifische Ausschlüsse von der Nutzung des Medication Service| <<User-specific Deny Policy>>
@@ -168,15 +171,15 @@ Innerhalb der Daten zu IHE_XDS in der Zip-Datei des Exportpakets werden Submissi
 ==== Medication
 Innerhalb dieses Verzeichnisses werden alle Daten des Medical Service 'medication' abgelegt.
 
-Jede FHIR-Resource wird dabei im Format JSON als jeweils eine Datei abgelegt. Der Dateiname ist M_nnnnnn.json mit 'nnnnnn' aus der Menge {000000, 999999}, beginnend mit 'nnnnnn' = 000000 und fortlaufender Zählung.
+Jede FHIR-Ressource wird dabei im Format JSON als jeweils eine Datei abgelegt. Dateien versionierbarer Ressourcen verwenden dafür vollständige History-Bundle mit allen Versionen. Der Dateiname ist M_nnnnnn.json mit 'nnnnnn' aus der Menge {000000, 999999}, beginnend mit 'nnnnnn' = 000000 und fortlaufender Zählung.
 
-Die jeweils enthaltene FHIR-Resource einer Datei ist innerhalb der JSON Struktur über das Attribut "resourceType" identifizerbar, das spezifische Profil der Resource über das Attribut "meta.profile".
+Die jeweils enthaltene FHIR-Ressource einer Datei ist innerhalb der JSON Struktur über das Attribut "resourceType" identifizerbar, das spezifische Profil der Ressource über das Attribut "meta.profile".
 
-Die exportierbaren FHIR-Resourcen verwenden teilweise Referenzen auf weitere Resourcen ("reference"). Zur Vermeidung nicht auflösbarer Referenzen bei einem Import des Exportpakets werden die Resourcen in der vorgegebenen Reihenfolge angeordnet, so dass referenzierte Resourcen vor dem Import von Resourcen mit Referenzen schon bekannt sind.
+Die exportierbaren FHIR-Ressourcen verwenden teilweise Referenzen auf weitere Ressourcen ("reference"). Zur Vermeidung nicht auflösbarer Referenzen bei einem Import des Exportpakets werden die Ressourcen in der vorgegebenen Reihenfolge angeordnet, so dass referenzierte Ressourcen vor dem Import von Ressourcen mit Referenzen schon bekannt sind.
 
 Zusätzlich müssen bei der Migration alle Versionen der FHIR-Instanzen berücksichtigt werden. Dabei ist sicherzustellen, dass die `Resource.id` über alle Versionen hinweg konstant bleibt, während die Attribute `Resource.meta.versionId` und `Resource.meta.lastUpdated` in jede Version korrekt übernommen werden. Es muss gewährleistet sein, dass bei der Migration nur die jeweils aktuellste FHIR-Instanz mit der höchsten Resource.meta.versionId über die Standard-Query-API abrufbar ist. Frühere Versionen der Instanzen dürfen nicht direkt über die Standard-Query-API abgerufen werden, sondern sind über die URL-Struktur `[base]/[resourceType]/[id]/_history/[versionId]` zugänglich. Diese Versionsverwaltung ermöglicht es, auch auf ältere FHIR-Instanzen zurückzugreifen, ohne die Konsistenz der aktuellen Daten zu beeinträchtigen.
 
-Die Resourcenreihenfolge im Exportpaket ergibt sich zu: 
+Die Ressourcenreihenfolge im Exportpaket ergibt sich zu: 
 
 . Organization
 . Practitioner
@@ -187,115 +190,295 @@ Die Resourcenreihenfolge im Exportpaket ergibt sich zu:
 . MedicationStatement (enthält Referenzen auf Medication, Organization, PractitionerRole, Practitioner)
 . Provenance (enthält Referenzen auf MedicationRequest, MedicationStatement, Organization, PractitionerRole, Practitioner)
 
-Bei einem Import sollen die einzelnen Dateien gemäß der Dateinummerierung, startend bei M_000000.json, verarbeitet werden. D.h.: Alle Nummerierungen der Dateien mit Resourcen des Typs 'Organization' sind kleiner als jede Nummerierung der Dateien mit Resourcen des Typs 'Practitioner' und alle Nummerierungen zu 'Practitioner' sind kleiner als jede Nummerierung zu 'PractitionerRole'.
+Bei einem Import sollen die einzelnen Dateien gemäß der Dateinummerierung, startend bei M_000000.json, verarbeitet werden. D.h.: Alle Nummerierungen der Dateien mit Ressourcen des Typs 'Organization' sind kleiner als jede Nummerierung der Dateien mit Ressourcen des Typs 'Practitioner' und alle Nummerierungen zu 'Practitioner' sind kleiner als jede Nummerierung zu 'PractitionerRole'.
 
-Beispiel: Inhalt M_123456.json (Resource: 'Medication')
+Beispiel: Inhalt M_123456.json (Resource: MedicationRequest gemäß Profil EMPMedicationRequest mit allen Versionen in einem Bundle)
 
 [source,json]
 ----
 {
-  "resourceType": "Medication",
-  "id": "2cb57b8b-bd90-46da-8a3d-d265e40bc3d1",
-  "meta": {
-    "versionId": "1",
-    "lastUpdated": "2025-08-21T14:40:00.000Z",
-    "profile": [
-      "https://gematik.de/fhir/epa-medication/StructureDefinition/epa-medication"
-    ]
-  },
-  "extension": [
+  "resourceType": "Bundle",
+  "id": "31a277f5-6ed9-4ee2-a864-4abc26b5de5b",
+  "type": "history",
+  "total": 3,
+  "entry": [
     {
-      "url": "https://gematik.de/fhir/epa-medication/StructureDefinition/epa-medication-type-extension",
-      "valueCoding": {
-        "code": "781405001",
-        "system": "http://snomed.info/sct",
-        "version": "http://snomed.info/sct/11000274103/version/20240515",
-        "display": "Medicinal product package (product)"
-      }
-    }
-  ],
-  "identifier": [
-    {
-      "system": "https://gematik.de/fhir/epa-medication/sid/epa-medication-unique-identifier",
-      "value": "F78C093639F9C1AD216341E77BE87E265B6A04BF4C830E4C010676146D035CA6"
-    }
-  ],
-  "code": {
-    "coding": [
-      {
-        "system": "http://fhir.de/CodeSystem/ifa/pzn",
-        "code": "08545331",
-        "display": "IBU-ratiopharm 800mg akut Schmerztabletten"
+      "fullUrl": "http://epa4all/epa/medication/api/v1/fhir/MedicationRequest/1959b8cd-58d2-4961-aa10-74d7e68896403",
+      "request": {
+        "method": "DELETE",
+        "url": "MedicationRequest/1959b8cd-58d2-4961-aa10-74d7e68896403"
       },
-      {
-        "system": "http://fhir.de/CodeSystem/bfarm/atc",
-        "code": "M01AE01",
-        "display": "Ibuprofen",
-        "version": "2022"
+      "response": {
+        "status": "200 OK",
+        "lastModified": "2026-08-22T15:00:00.000Z"
       }
-    ]
-  },
-  "form": {
-    "coding": [
-      {
-        "system": "https://fhir.kbv.de/CodeSystem/KBV_CS_SFHIR_KBV_DARREICHUNGSFORM",
-        "code": "TAB",
-        "display": "Tabletten",
-        "version": "1.10"
-      },
-      {
-        "system": "http://standardterms.edqm.eu",
-        "code": "12200",
-        "display": "Tablet"
-      },
-      {
-        "system": "http://snomed.info/sct",
-        "code": "385055001",
-        "version": "http://snomed.info/sct/11000274103/version/20240515",
-        "display": "Tablet (basic dose form)"
-      }
-    ]
-  },
-  "status": "active",
-  "amount": {
-    "numerator": {
-      "value": 50,
-      "code": "{Tablet}",
-      "system": "http://unitsofmeasure.org",
-      "unit": "Tablet"
     },
-    "denominator": {
-      "value": 1,
-      "code": "{Package}",
-      "system": "http://unitsofmeasure.org",
-      "unit": "Package"
-    }
-  },
-  "ingredient": [
     {
-      "itemCodeableConcept": {
-        "coding": [
+      "fullUrl": "http://epa4all/epa/medication/api/v1/fhir/MedicationRequest/1959b8cd-58d2-4961-aa10-74d7e68896403",
+      "resource": {
+        "resourceType": "MedicationRequest",
+        "id": "1959b8cd-58d2-4961-aa10-74d7e68896403",
+        "meta": {
+          "versionId": "2",
+          "lastUpdated": "2026-08-22T14:50:10.000Z",
+          "profile": [
+            "https://gematik.de/fhir/epa-medication/StructureDefinition/emp-medication-request"
+          ]
+        },
+        "extension": [
           {
-            "code": "387207008",
-            "system": "http://snomed.info/sct",
-            "version": "http://snomed.info/sct/11000274103/version/20240515",
-            "display": "Ibuprofen (substance)"
+            "url": "https://gematik.de/fhir/epa-medication/StructureDefinition/context-extension",
+            "valueCode": "EMP"
+          },
+          {
+            "url": "https://gematik.de/fhir/epa-medication/StructureDefinition/reason-patient-instruction-extension",
+            "valueString": "akuten Behandlung von Migräneanfällen mit und ohne Aura"
+          },
+          {
+            "url": "https://gematik.de/fhir/epa-medication/StructureDefinition/patient-note-extension",
+            "valueAnnotation": {
+              "text": "Bitte schützen Sie das Arzneimittel vor hohen Temperaturen und direkter Sonneneinstrahlung."
+            }
+          },
+          {
+            "url": "http://hl7.org/fhir/5.0/StructureDefinition/extension-MedicationRequest.effectiveDosePeriod",
+            "valuePeriod": {
+              "start": "2026-08-22",
+              "end": "2026-08-25"
+            }
+          },
+          {
+            "url": "https://gematik.de/fhir/epa-medication/StructureDefinition/emp-origin-medication-extension",
+            "valueReference": {
+              "reference": "Medication/9cbf1803-e125-40d3-ad68-1e155f71e252"
+            }
+          },
+          {
+            "url": "http://hl7.org/fhir/5.0/StructureDefinition/extension-MedicationRequest.renderedDosageInstruction",
+            "valueMarkdown": "1-0-0-0 Stück"
+          },
+          {
+            "extension": [
+              {
+                "url": "algorithmVersion",
+                "valueString": "1.0.1"
+              },
+              {
+                "url": "language",
+                "valueCode": "de-DE"
+              }
+            ],
+            "url": "http://ig.fhir.de/igs/medication/StructureDefinition/GeneratedDosageInstructionsMeta"
+          },
+          {
+            "url": "http://hl7.org/fhir/5.0/StructureDefinition/extension-MedicationRequest.renderedDosageInstruction",
+            "valueMarkdown": "1-0-2-0 Stück"
+          }
+        ],
+        "status": "active",
+        "intent": "plan",
+        "medicationReference": {
+          "reference": "Medication/9cbf1803-e125-40d3-ad68-1e155f71e252"
+        },
+        "subject": {
+          "identifier": {
+            "system": "http://fhir.de/sid/gkv/kvid-10",
+            "value": "X110411319"
+          }
+        },
+        "authoredOn": "2026-08-22",
+        "note": [
+          {
+            "text": "Hinweis für den LE"
+          }
+        ],
+        "dosageInstruction": [
+          {
+            "timing": {
+              "repeat": {
+                "frequency": 1,
+                "period": 1,
+                "periodUnit": "d",
+                "when": [
+                  "MORN"
+                ]
+              }
+            },
+            "doseAndRate": [
+              {
+                "doseQuantity": {
+                  "value": 1,
+                  "unit": "Stück",
+                  "system": "https://fhir.kbv.de/CodeSystem/KBV_CS_SFHIR_BMP_DOSIEREINHEIT",
+                  "code": "1"
+                }
+              }
+            ]
+          },
+          {
+            "timing": {
+              "repeat": {
+                "frequency": 1,
+                "period": 1,
+                "periodUnit": "d",
+                "when": [
+                  "MORN"
+                ]
+              }
+            },
+            "doseAndRate": [
+              {
+                "doseQuantity": {
+                  "value": 1,
+                  "unit": "Stück",
+                  "system": "http://unitsofmeasure.org",
+                  "code": "1"
+                }
+              }
+            ]
+          },
+          {
+            "timing": {
+              "repeat": {
+                "frequency": 1,
+                "period": 1,
+                "periodUnit": "d",
+                "when": [
+                  "EVE"
+                ]
+              }
+            },
+            "doseAndRate": [
+              {
+                "doseQuantity": {
+                  "value": 2,
+                  "unit": "Stück",
+                  "system": "http://unitsofmeasure.org",
+                  "code": "1"
+                }
+              }
+            ]
           }
         ]
       },
-      "strength": {
-        "numerator": {
-          "value": 400,
-          "code": "mg",
-          "system": "http://unitsofmeasure.org",
-          "unit": "MilliGram"
+      "request": {
+        "method": "PUT",
+        "url": "MedicationRequest/1959b8cd-58d2-4961-aa10-74d7e68896403"
+      },
+      "response": {
+        "status": "200 OK",
+        "location": "MedicationDispense/1959b8cd-58d2-4961-aa10-74d7e68896403/_history/2",
+        "lastModified": "2026-08-22T14:50:10.000Z"
+      }
+    },
+    {
+      "fullUrl": "http://epa4all/epa/medication/api/v1/fhir/MedicationRequest/1959b8cd-58d2-4961-aa10-74d7e68896403",
+      "resource": {
+        "resourceType": "MedicationRequest",
+        "id": "1959b8cd-58d2-4961-aa10-74d7e68896403",
+        "meta": {
+          "versionId": "1",
+          "lastUpdated": "2026-08-22T14:43:33.244Z",
+          "profile": [
+            "https://gematik.de/fhir/epa-medication/StructureDefinition/emp-medication-request"
+          ]
         },
-        "denominator": {
-          "value": 1,
-          "code": "{Tablet}",
-          "system": "http://unitsofmeasure.org",
-          "unit": "Tablet"
-        }
+        "extension": [
+          {
+            "url": "https://gematik.de/fhir/epa-medication/StructureDefinition/context-extension",
+            "valueCode": "EMP"
+          },
+          {
+            "url": "https://gematik.de/fhir/epa-medication/StructureDefinition/reason-patient-instruction-extension",
+            "valueString": "akuten Behandlung von Migräneanfällen mit und ohne Aura"
+          },
+          {
+            "url": "https://gematik.de/fhir/epa-medication/StructureDefinition/patient-note-extension",
+            "valueAnnotation": {
+              "text": "Bitte schützen Sie das Arzneimittel vor hohen Temperaturen und direkter Sonneneinstrahlung."
+            }
+          },
+          {
+            "url": "http://hl7.org/fhir/5.0/StructureDefinition/extension-MedicationRequest.effectiveDosePeriod",
+            "valuePeriod": {
+              "start": "2026-08-22",
+              "end": "2026-08-25"
+            }
+          },
+          {
+            "url": "https://gematik.de/fhir/epa-medication/StructureDefinition/emp-origin-medication-extension",
+            "valueReference": {
+              "reference": "Medication/9cbf1803-e125-40d3-ad68-1e155f71e252"
+            }
+          },
+          {
+            "url": "http://hl7.org/fhir/5.0/StructureDefinition/extension-MedicationRequest.renderedDosageInstruction",
+            "valueMarkdown": "1-0-0-0 Stück"
+          },
+          {
+            "extension": [
+              {
+                "url": "algorithmVersion",
+                "valueString": "1.0.1"
+              },
+              {
+                "url": "language",
+                "valueCode": "de-DE"
+              }
+            ],
+            "url": "http://ig.fhir.de/igs/medication/StructureDefinition/GeneratedDosageInstructionsMeta"
+          }
+        ],
+        "status": "active",
+        "intent": "plan",
+        "medicationReference": {
+          "reference": "Medication/9cbf1803-e125-40d3-ad68-1e155f71e252"
+        },
+        "subject": {
+          "identifier": {
+            "system": "http://fhir.de/sid/gkv/kvid-10",
+            "value": "X110411319"
+          }
+        },
+        "authoredOn": "2026-08-22",
+        "note": [
+          {
+            "text": "Hinweis für den LE"
+          }
+        ],
+        "dosageInstruction": [
+          {
+            "timing": {
+              "repeat": {
+                "frequency": 1,
+                "period": 1,
+                "periodUnit": "d",
+                "when": [
+                  "MORN"
+                ]
+              }
+            },
+            "doseAndRate": [
+              {
+                "doseQuantity": {
+                  "value": 1,
+                  "unit": "Stück",
+                  "system": "https://fhir.kbv.de/CodeSystem/KBV_CS_SFHIR_BMP_DOSIEREINHEIT",
+                  "code": "1"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "url": "MedicationRequest"
+      },
+      "response": {
+        "status": "201 Created",
+        "location": "MedicationRequest/1959b8cd-58d2-4961-aa10-74d7e68896403/_history/1",
+        "lastModified": "2026-08-22T14:43:33.244Z"
       }
     }
   ]
@@ -303,14 +486,65 @@ Beispiel: Inhalt M_123456.json (Resource: 'Medication')
 ----
 
 ---
+==== Patient
+Innerhalb dieses Verzeichnisses werden alle Daten des Patient Service abgelegt, also alle Ressourcen des Profils Patient (epa-patient).
+
+Jede FHIR-Ressource wird im Format JSON als jeweils eine Datei abgelegt. Der Dateiname ist P_nnnnnn.json mit 'nnnnnn' aus der Menge {000000, 999999}, beginnend mit 'nnnnnn' = 000000 und fortlaufender Zählung.
+
+Beispiel: Inhalt P_000000.json (Resource: 'Patient')
+
+[source,json]
+----
+{
+  "resourceType" : "Patient",
+  "id" : "7eeb4e81-ce38-4d70-84fc-9ca4c7d0939c",
+  "meta" : {
+    "profile" : [
+        "https://gematik.de/fhir/epa/StructureDefinition/epa-patient"
+    ]
+  },
+  "identifier" : [
+    {
+      "system" : "http://fhir.de/sid/gkv/kvid-10",
+      "value" : "G995030566"
+    }
+  ],
+  "active" : true,
+  "name" : [
+    {
+      "use" : "official",
+      "family" : "Mustermann",
+      "given" : [
+        "Erika"
+      ]
+    },
+    {
+      "use" : "maiden",
+      "family" : "Gabler",
+      "_family" : {
+        "extension" : [
+          {
+            "url" : "http://hl7.org/fhir/StructureDefinition/humanname-own-name",
+            "valueString" : "Gabler"
+          }
+        ]
+      }
+    }
+  ],
+  "gender" : "female",
+  "birthDate" : "1964-08-12"
+}
+----
+
+---
 ==== AuditEvents
-Innerhalb dieses Verzeichnisses werden alle Daten des Audit Event Services abgelegt.
+Innerhalb dieses Verzeichnisses werden alle Daten des Audit Services abgelegt.
 
-Berücksichtigt werden dabei nur Audit Event FHIR-Resourcen und keinerlei gerenderte Auszüge (PDFs).
+Berücksichtigt werden dabei nur Audit Event FHIR-Ressourcen und keinerlei gerenderte Auszüge (PDFs).
 
-Jede FHIR-Resource des Typs "AuditEvent" (Profil: epa-auditevent) wird dabei im Format JSON als jeweils eine Datei abgelegt. Der Dateiname ist A_nnnnnn.json mit 'nnnnnn' aus der Menge {000000, 999999}, beginnend mit 'nnnnnn' = 000000 und fortlaufender Zählung.
+Jede FHIR-Ressource des Typs "AuditEvent" (Profil: epa-auditevent) wird dabei im Format JSON als jeweils eine Datei abgelegt. Der Dateiname ist A_nnnnnn.json mit 'nnnnnn' aus der Menge {000000, 999999}, beginnend mit 'nnnnnn' = 000000 und fortlaufender Zählung.
 
-Beispiel: Inhalt A_111111.json (Event: cancel medication dispense)
+Beispiel: Inhalt A_111111.json (Resource: 'AuditEvent' - cancel medication dispense)
 
 [source,json]
 ----
