@@ -1,6 +1,11 @@
 <img align="right" width="250" height="47" src="images/Gematik_Logo_Flag_With_Background.png"/> <br/>    
  
 # Release Notes ref-ePA-HealthRecordMigration
+## Release 3.1.0-7
+- require history-bundles for versioned fhir resources (C_12580)
+- added resources of Patient Service (C_12479)
+### changes
+- remove isPrivateInsurance to indicate if GKV or PKV (C_12359)
 ## Release 3.1.0-6
 - Health Record Relocation for ePA-3.1.3
 ### changes
