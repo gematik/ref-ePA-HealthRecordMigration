@@ -1,6 +1,9 @@
 <img align="right" width="250" height="47" src="images/Gematik_Logo_Flag_With_Background.png"/> <br/>    
  
 # Release Notes ref-ePA-HealthRecordMigration
+## Release 3.1.0-8
+- corrected usage of Patient Resources - require now history-bundle (C_12617)
+- removed required order of fhir resources in zip-file, mention cyclic references (C_12708)
 ## Release 3.1.0-7
 - require history-bundles for versioned fhir resources (C_12580)
 - added resources of Patient Service (C_12479)
