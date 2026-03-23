@@ -29,7 +29,7 @@ endif::[]
 [width="100%",cols="50%,50%", options="header",]
 |===
 |Dokumentversion:
-|1.1.3
+|1.1.4
 |===
 
 
@@ -55,6 +55,8 @@ toc::[]
 |Zulässigkeit verlinkter Anhänge in XDS-Dokumenten und editorische Anpassungen 
 |1.1.3
 |Ergänzung der Patient Ressourcen und History-Bundles für versionierte Ressourcen
+|1.1.4
+|Keine Reihenfolge der Medication Ressourcen im Zip-File mehr vorgegeben und redaktionelle Korrekturen
 |===
 
 
@@ -171,26 +173,17 @@ Innerhalb der Daten zu IHE_XDS in der Zip-Datei des Exportpakets werden Submissi
 ==== Medication
 Innerhalb dieses Verzeichnisses werden alle Daten des Medical Service 'medication' abgelegt.
 
-Jede FHIR-Ressource wird dabei im Format JSON als jeweils eine Datei abgelegt. Dateien versionierbarer Ressourcen verwenden dafür vollständige History-Bundle mit allen Versionen. Der Dateiname ist M_nnnnnn.json mit 'nnnnnn' aus der Menge {000000, 999999}, beginnend mit 'nnnnnn' = 000000 und fortlaufender Zählung.
+Jede FHIR-Ressource wird im Format JSON als jeweils eine Datei abgelegt. Der Dateiname ist M_nnnnnn.json mit 'nnnnnn' aus der Menge {000000, ..., 999999}, beginnend mit 'nnnnnn' = 000000 und fortlaufender Zählung.
 
 Die jeweils enthaltene FHIR-Ressource einer Datei ist innerhalb der JSON Struktur über das Attribut "resourceType" identifizerbar, das spezifische Profil der Ressource über das Attribut "meta.profile".
 
-Die exportierbaren FHIR-Ressourcen verwenden teilweise Referenzen auf weitere Ressourcen ("reference"). Zur Vermeidung nicht auflösbarer Referenzen bei einem Import des Exportpakets werden die Ressourcen in der vorgegebenen Reihenfolge angeordnet, so dass referenzierte Ressourcen vor dem Import von Ressourcen mit Referenzen schon bekannt sind.
+Versionierbare Ressourcen verwenden vollständige History-Bundle mit allen Versionen pro Datei. Die Resource.id muss dabei über alle Versionen hinweg konstant bleiben, die Attribute Resource.meta.versionId und Resource.meta.lastUpdated werden pro Version übernommen. Nach einem Import aller Versionen darf nur die jeweils aktuellste Version mit der höchsten Resource.meta.versionId über die Standard-Query-Api abrufbar sein. Alle älteren Versionen müssen dagegen über die URL [base]/[resourceType]/[id]/_history/[versionId] zugänglich sein.
 
-Zusätzlich müssen bei der Migration alle Versionen der FHIR-Instanzen berücksichtigt werden. Dabei ist sicherzustellen, dass die `Resource.id` über alle Versionen hinweg konstant bleibt, während die Attribute `Resource.meta.versionId` und `Resource.meta.lastUpdated` in jede Version korrekt übernommen werden. Es muss gewährleistet sein, dass bei der Migration nur die jeweils aktuellste FHIR-Instanz mit der höchsten Resource.meta.versionId über die Standard-Query-API abrufbar ist. Frühere Versionen der Instanzen dürfen nicht direkt über die Standard-Query-API abgerufen werden, sondern sind über die URL-Struktur `[base]/[resourceType]/[id]/_history/[versionId]` zugänglich. Diese Versionsverwaltung ermöglicht es, auch auf ältere FHIR-Instanzen zurückzugreifen, ohne die Konsistenz der aktuellen Daten zu beeinträchtigen.
+Einige FHIR-Ressourcen verwenden Referenzen auf weitere FHIR-Ressourcen, welche (alle) nach einem erfolgreichen Import aller FHIR-Ressourcen auflösbar sein müssen. 
 
-Die Ressourcenreihenfolge im Exportpaket ergibt sich zu: 
+Bei einem Import eines Pakets müssen die Referenzen geprüft werden. Dabei können auch zyklische Referenzen zwischen FHIR-Ressourcen des Pakets vorhanden sein, welche nicht direkt, sondern erst bei Vorliegen aller FHIR-Ressourcen des Pakets validiert werden können.
 
-. Organization
-. Practitioner
-. PractitionerRole (enthält Referenzen auf Organization und Practitioner)
-. Medication
-. MedicationRequest (enthält Referenzen auf Medication und PractitionerRole)
-. MedicationDispense (enthält Referenzen auf Medication und Organization)
-. MedicationStatement (enthält Referenzen auf Medication, Organization, PractitionerRole, Practitioner)
-. Provenance (enthält Referenzen auf MedicationRequest, MedicationStatement, Organization, PractitionerRole, Practitioner)
-
-Bei einem Import sollen die einzelnen Dateien gemäß der Dateinummerierung, startend bei M_000000.json, verarbeitet werden. D.h.: Alle Nummerierungen der Dateien mit Ressourcen des Typs 'Organization' sind kleiner als jede Nummerierung der Dateien mit Ressourcen des Typs 'Practitioner' und alle Nummerierungen zu 'Practitioner' sind kleiner als jede Nummerierung zu 'PractitionerRole'.
+Verbleiben nach der Verarbeitung des vollständigen Exportpakets dennoch offene, nicht aufgelöste Referenzen auf FHIR-Ressourcen, so ist der Import der Daten in ein Aktenkonto nicht erfolgreich durchführbar und muss abgebrochen werden.
 
 Beispiel: Inhalt M_123456.json (Resource: MedicationRequest gemäß Profil EMPMedicationRequest mit allen Versionen in einem Bundle)
 
@@ -489,50 +482,117 @@ Beispiel: Inhalt M_123456.json (Resource: MedicationRequest gemäß Profil EMPMe
 ==== Patient
 Innerhalb dieses Verzeichnisses werden alle Daten des Patient Service abgelegt, also alle Ressourcen des Profils Patient (epa-patient).
 
-Jede FHIR-Ressource wird im Format JSON als jeweils eine Datei abgelegt. Der Dateiname ist P_nnnnnn.json mit 'nnnnnn' aus der Menge {000000, 999999}, beginnend mit 'nnnnnn' = 000000 und fortlaufender Zählung.
+Die Patient-Ressourcen werden dabei im Format JSON als eine Datei abgelegt. Diese Datei beinhaltet alle versionierten Patient-Ressourcen vollständig in einem History-Bundle. Der Dateiname ist P_000000.json.
 
 Beispiel: Inhalt P_000000.json (Resource: 'Patient')
 
 [source,json]
 ----
 {
-  "resourceType" : "Patient",
-  "id" : "7eeb4e81-ce38-4d70-84fc-9ca4c7d0939c",
-  "meta" : {
-    "profile" : [
-        "https://gematik.de/fhir/epa/StructureDefinition/epa-patient"
-    ]
-  },
-  "identifier" : [
+  "resourceType": "Bundle",
+  "id": "example-patient-history-bundle",
+  "link": [
     {
-      "system" : "http://fhir.de/sid/gkv/kvid-10",
-      "value" : "G995030566"
+      "relation": "self",
+      "url": "/epa/patient/api/v1/fhir/Patient/_history"
     }
   ],
-  "active" : true,
-  "name" : [
+  "entry": [
     {
-      "use" : "official",
-      "family" : "Mustermann",
-      "given" : [
-        "Erika"
-      ]
+      "request": {
+        "method": "PUT",
+        "url": "Patient/e6442a99-521b-482c-b62b-b0f809d4e951"
+      },
+      "response": {
+        "status": "200 OK",
+        "lastModified": "2025-10-10T15:00:00.000Z",
+        "location": "Patient/e6442a99-521b-482c-b62b-b0f809d4e951/_history/2"
+      },
+      "fullUrl": "http://epa4all/epa/patient/api/v1/fhir/Patient/e6442a99-521b-482c-b62b-b0f809d4e951",
+      "resource": {
+        "resourceType": "Patient",
+        "id": "e6442a99-521b-482c-b62b-b0f809d4e951",
+        "meta": {
+          "profile": [
+            "https://gematik.de/fhir/epa/StructureDefinition/epa-patient|1.3.0"
+          ],
+          "versionId": "2",
+          "lastUpdated": "2026-01-19T14:37:12+01:00"
+        },
+        "identifier": [
+          {
+            "system": "http://fhir.de/sid/gkv/kvid-10",
+            "value": "G995030566"
+          }
+        ],
+        "name": [
+          {
+            "given": [
+              "Erika"
+            ],
+            "use": "official",
+            "family": "Mustermann"
+          },
+          {
+            "use": "maiden",
+            "family": "Gabler",
+            "_family": {
+              "extension": [
+                {
+                  "url": "http://hl7.org/fhir/StructureDefinition/humanname-own-name",
+                  "valueString": "Gabler"
+                }
+              ]
+            }
+          }
+        ],
+        "gender": "female",
+        "birthDate": "1964-08-12"
+      }
     },
     {
-      "use" : "maiden",
-      "family" : "Gabler",
-      "_family" : {
-        "extension" : [
+      "request": {
+        "method": "POST",
+        "url": "Patient"
+      },
+      "response": {
+        "status": "201 Created",
+        "lastModified": "2025-08-22T14:43:33.244Z",
+        "location": "Patient/e6442a99-521b-482c-b62b-b0f809d4e951/_history/1"
+      },
+      "fullUrl": "http://epa4all/epa/patient/api/v1/fhir/Patient/e6442a99-521b-482c-b62b-b0f809d4e951",
+      "resource": {
+        "resourceType": "Patient",
+        "id": "e6442a99-521b-482c-b62b-b0f809d4e951",
+        "meta": {
+          "profile": [
+            "https://gematik.de/fhir/epa/StructureDefinition/epa-patient|1.3.0"
+          ],
+          "versionId": "1",
+          "lastUpdated": "2025-12-06T10:00:14+01:00"
+        },
+        "identifier": [
           {
-            "url" : "http://hl7.org/fhir/StructureDefinition/humanname-own-name",
-            "valueString" : "Gabler"
+            "system": "http://fhir.de/sid/gkv/kvid-10",
+            "value": "G995030566"
           }
-        ]
+        ],
+        "name": [
+          {
+            "given": [
+              "Erika"
+            ],
+            "use": "official",
+            "family": "Gabler"
+          }
+        ],
+        "gender": "female",
+        "birthDate": "1964-08-12"
       }
     }
   ],
-  "gender" : "female",
-  "birthDate" : "1964-08-12"
+  "type": "history",
+  "total": 2
 }
 ----
 
@@ -542,7 +602,7 @@ Innerhalb dieses Verzeichnisses werden alle Daten des Audit Services abgelegt.
 
 Berücksichtigt werden dabei nur Audit Event FHIR-Ressourcen und keinerlei gerenderte Auszüge (PDFs).
 
-Jede FHIR-Ressource des Typs "AuditEvent" (Profil: epa-auditevent) wird dabei im Format JSON als jeweils eine Datei abgelegt. Der Dateiname ist A_nnnnnn.json mit 'nnnnnn' aus der Menge {000000, 999999}, beginnend mit 'nnnnnn' = 000000 und fortlaufender Zählung.
+Jede FHIR-Ressource des Typs "AuditEvent" (Profil: epa-auditevent) wird dabei im Format JSON als jeweils eine Datei abgelegt. Der Dateiname ist A_nnnnnn.json mit 'nnnnnn' aus der Menge {000000, ..., 999999}, beginnend mit 'nnnnnn' = 000000 und fortlaufender Zählung.
 
 Beispiel: Inhalt A_111111.json (Resource: 'AuditEvent' - cancel medication dispense)
 
@@ -897,7 +957,7 @@ Beispiel: Inhalt Constraints.json mit 3 Einträgen
 ==== Entitlements
 Innerhalb dieses Verzeichnisses werden alle Daten des Entitlement Managements abgelegt.
 
-Jedes Entitlement wird dabei als jeweils eine Datei abgelegt. Der Dateiname ist E_nnnnnn.json mit 'nnnnnn' aus der Menge {000000, 999999}, beginnend mit 'nnnnnn' = 000000 und fortlaufender Zählung.
+Jedes Entitlement wird dabei als jeweils eine Datei abgelegt. Der Dateiname ist E_nnnnnn.json mit 'nnnnnn' aus der Menge {000000, ..., 999999}, beginnend mit 'nnnnnn' = 000000 und fortlaufender Zählung.
 
 Entitlements werden nicht direkt aus dem Aktenkonto in die Zip-Datei des Exportpakets übernommen. Die sicherheitsrelevanten Attribute, KVNR des Aktenkontos, actorId des befugten Nutzers (KVNR oder Telematik-Id) sowie das Ende der Gültigkeit der Befugnis (validTo), werden in einem JWT zusammengefasst (gemäß gemSpec_Aktensystem_ePAfueralle, A_25719*) und mit der Identität des Aktensystems (ID.FD.SIG) signiert.
 Bei einem Import im empfangenden Aktensystem muss dieses JWT mittels HSM Regel 'rr5' prüfbar sein.
