@@ -8,7 +8,7 @@
 | Designation  | __Release 3.1 (3.1.3-3)__  |
 | Current status | __released__ |
 | Release date   | __2026-05-20__  |
-| Release documents</br> (specification and relevant sources) | [gemSpecPages ePA 3.1.3-3](https://gemspec.gematik.de/releases/ePA_3_1_3-3/)|
+| Release documents</br> (specification and relevant sources) | [gemSpecPages ePA 3.1.3-3](https://gemspec.gematik.de/prereleases/Draft_ePA_3_1_3-3/)|
 | Previous release documents | [gemSpecPages ePA 3.1.3-2](https://gemspec.gematik.de/releases/ePA_3_1_3-2/)|
 | Follow-up | not yet defined |
 
