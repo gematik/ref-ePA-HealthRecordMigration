@@ -17,6 +17,10 @@
   </ol>
 </details>
 
+> [!IMPORTANT]
+> This repository ends with release 3.1 (3.1.3-4). Support for subsequent releases (ePA-27 and following) is maintained as part of the 
+release branches in repository [ePA-Basic](https://github.com/gematik/ePA-Basic)!
+
 ## About Health Record Relocation
 This repository provides technical information for the Electronic Health Record (ePA) application as part of the Telematic Infrastructure (TI).
 
